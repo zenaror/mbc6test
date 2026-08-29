@@ -30,6 +30,11 @@ The ROM shows one of these on boot:
 
    Pressing A on the INFO page wraps back to the results page.
 
+Every screen also shows a build line in the bottom-left corner, e.g.
+`B:95ECD80` — the 7-character short git commit hash the ROM was built
+from (`+` appended if built from an uncommitted/dirty tree). Include
+this in any bug report; see `README.md` "Identifying a build".
+
 ## Status letters
 
 Each test on the results page shows one letter:

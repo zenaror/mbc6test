@@ -193,6 +193,24 @@ PrintHexByte:
     inc de
     ret
 
+; --- PrintBuildID ---
+; Prints "B:XXXXXXXX" at the bottom-left of the screen (row 16), from
+; BuildIDText (src/build_info.asm, generated from the git commit at
+; build time). Called from every screen so a screenshot or bug report
+; can always be tied back to an exact build, even one showing
+; CGB REQUIRED or the destructive-mode warning.
+PrintBuildID:
+    ld hl, BuildIDLabel
+    ld de, _SCRN0 + 16 * SCRN_WIDTH + 0
+    call PrintString
+    ld hl, BuildIDText
+    ld de, _SCRN0 + 16 * SCRN_WIDTH + 2
+    call PrintString
+    ret
+
+BuildIDLabel:
+    db "B:", 0
+
 ; --- ReadJoypad ---
 ; Output: a = bitmask of currently held buttons, active-high:
 ; bit0=Right bit1=Left bit2=Up bit3=Down bit4=A bit5=B bit6=Select bit7=Start.
@@ -408,6 +426,7 @@ DrawResultsGrid:
     ld de, _SCRN0 + 14 * SCRN_WIDTH + 0
     call PrintString
 
+    call PrintBuildID
     call UI_TurnOn
     ret
 
@@ -478,6 +497,7 @@ DrawFailurePage:
     ld hl, HintNextText
     ld de, _SCRN0 + 14 * SCRN_WIDTH + 0
     call PrintString
+    call PrintBuildID
     call UI_TurnOn
     ret
 
@@ -547,6 +567,7 @@ DrawInfoPage:
     ld hl, HintBackText
     ld de, _SCRN0 + 14 * SCRN_WIDTH + 0
     call PrintString
+    call PrintBuildID
     call UI_TurnOn
     ret
 
@@ -627,6 +648,7 @@ UI_ShowCgbRequired:
     ld hl, CgbRequiredText
     ld de, _SCRN0 + 3 * SCRN_WIDTH + 3
     call PrintString
+    call PrintBuildID
     call UI_TurnOn
     ret
 
@@ -668,6 +690,7 @@ UI_ConfirmDestructive:
     ld hl, WarnText5
     ld de, _SCRN0 + 9 * SCRN_WIDTH + 0
     call PrintString
+    call PrintBuildID
     call UI_TurnOn
 
     ld b, 0            ; consecutive-hold frame counter

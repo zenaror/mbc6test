@@ -2,6 +2,7 @@
 /src/bank_data.asm
 /src/bank_data_fixed.asm
 /src/font_data.asm
+/src/build_info.asm
 __pycache__/
 *.pyc
 /emulador/

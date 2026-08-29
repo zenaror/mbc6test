@@ -26,7 +26,7 @@ SYM        := $(BUILD_DIR)/mbc6-test.sym
 # CLAUDE.md "Destructive flash policy": default must be OFF.
 ENABLE_DESTRUCTIVE_FLASH_TESTS ?= 0
 
-GENERATED := $(SRC_DIR)/bank_data.asm $(SRC_DIR)/bank_data_fixed.asm $(SRC_DIR)/font_data.asm
+GENERATED := $(SRC_DIR)/bank_data.asm $(SRC_DIR)/bank_data_fixed.asm $(SRC_DIR)/font_data.asm $(SRC_DIR)/build_info.asm
 
 # Force the generators to run at parse time (not just as a recipe
 # prerequisite) so $(wildcard) below always sees the generated files —
@@ -35,6 +35,12 @@ GENERATED := $(SRC_DIR)/bank_data.asm $(SRC_DIR)/bank_data_fixed.asm $(SRC_DIR)/
 # passes.
 $(if $(wildcard $(SRC_DIR)/bank_data.asm $(SRC_DIR)/bank_data_fixed.asm),,$(shell $(PYTHON3) $(TOOLS_DIR)/gen_bank_data.py >&2))
 $(if $(wildcard $(SRC_DIR)/font_data.asm),,$(shell $(PYTHON3) $(TOOLS_DIR)/gen_font.py >&2))
+# build_info.asm is NOT guarded like the others above — it must be
+# regenerated on every invocation (unconditionally), since the git
+# commit/dirty state can change without any tracked source file
+# changing, and the whole point is that it always reflects the
+# current HEAD.
+$(shell $(PYTHON3) $(TOOLS_DIR)/gen_build_info.py >&2)
 
 SOURCES := $(wildcard $(SRC_DIR)/*.asm)
 OBJECTS := $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.o,$(SOURCES))
@@ -50,19 +56,25 @@ RGBASM_FLAGS := -I $(INC_DIR) -I $(SRC_DIR) \
 # forcing a full rebuild without requiring `make clean` first.
 FLAG_STAMP := $(BUILD_DIR)/.flags-$(ENABLE_DESTRUCTIVE_FLASH_TESTS)
 
-.PHONY: all clean verify test generate
+.PHONY: all clean verify test generate .FORCE
 
 all: $(ROM)
 
 generate:
 	$(PYTHON3) $(TOOLS_DIR)/gen_bank_data.py
 	$(PYTHON3) $(TOOLS_DIR)/gen_font.py
+	$(PYTHON3) $(TOOLS_DIR)/gen_build_info.py
 
 $(SRC_DIR)/bank_data.asm $(SRC_DIR)/bank_data_fixed.asm: $(TOOLS_DIR)/gen_bank_data.py $(TOOLS_DIR)/mbc6_layout.py
 	$(PYTHON3) $(TOOLS_DIR)/gen_bank_data.py
 
 $(SRC_DIR)/font_data.asm: $(TOOLS_DIR)/gen_font.py
 	$(PYTHON3) $(TOOLS_DIR)/gen_font.py
+
+# .FORCE (not a real file) makes this target's recipe run every time,
+# matching the always-regenerate behavior above.
+$(SRC_DIR)/build_info.asm: .FORCE
+	$(PYTHON3) $(TOOLS_DIR)/gen_build_info.py
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
