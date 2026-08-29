@@ -1,0 +1,14 @@
+/build/
+/src/bank_data.asm
+/src/bank_data_fixed.asm
+/src/font_data.asm
+__pycache__/
+*.pyc
+/emulador/
+
+# In case an emulator is ever run with the repo root as its working
+# directory instead of emulador/, don't let its save/config litter
+# leak into the repo.
+/*.sav
+/*.sav.flash
+/gbe.ini

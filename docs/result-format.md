@@ -1,0 +1,58 @@
+# Machine-readable result block
+
+Optional, for emulator CI automation (CLAUDE.md §15). Written once, at
+the very end of the safe test batch, **after** T20-T24 (the SRAM
+banking tests) have already run and recorded their own PASS/FAIL —
+so this block never influences, and is never influenced by, those
+tests' own read/write patterns.
+
+## Location
+
+- **SRAM bank:** 7 (last bank), selected in **window B**
+  (`MBC6_REG_SRAM_BANK_B`).
+- **Offset:** `$F00` within the 4 KiB window (`$B000 + $F00 = $BF00`).
+- SRAM must be enabled (`$0A` to `MBC6_REG_SRAM_ENABLE`) to read it,
+  exactly like any other SRAM access.
+
+This offset is chosen simply to stay clear of the two offsets (`$000`
+and `$FFF`) T21-T24 exercise, though since the block is written last,
+any overlap would only ever show the final block contents, not corrupt
+an in-progress test.
+
+## Layout (20 bytes, all fixed offsets from the block base)
+
+| Offset | Size | Field | Meaning |
+|--------|------|-------|---------|
+| 0 | 4 | magic | ASCII `"M6TS"` |
+| 4 | 1 | format_version | Layout version of this table; `1` |
+| 5 | 1 | suite_version | Test-suite version; `1` |
+| 6 | 1 | pass_count | Total PASS results |
+| 7 | 1 | fail_count | Total FAIL results |
+| 8 | 1 | skip_count | Total SKIP results |
+| 9 | 1 | info_count | Total INFO results |
+| 10 | 3 | failed_bitset | Bit `i` of byte `i/8` (LSB-first within each byte) set if test ID `i` FAILed. Covers test IDs 0-23; see `include/tests.inc` for the current ID assignment. |
+| 13 | 1 | first_fail_test_id | Test ID of the first FAIL this run, or `$FF` if none |
+| 14 | 1 | first_fail_bank | Bank number associated with the first failure |
+| 15 | 1 | first_fail_addr_hi | High byte of the address associated with the first failure |
+| 16 | 1 | first_fail_addr_lo | Low byte of the address associated with the first failure |
+| 17 | 1 | first_fail_expected | Expected byte at the first failure |
+| 18 | 1 | first_fail_actual | Actual byte at the first failure |
+| 19 | 1 | checksum | Sum of bytes 0-18, mod 256 |
+
+If `fail_count` is 0, `first_fail_*` fields are all `$00` and
+`first_fail_test_id` is `$FF` (no failure).
+
+## Reading it from a savestate/memory dump
+
+1. Ensure SRAM is enabled and bank 7 is selected in window B (or read
+   it via whatever your tool's raw SRAM-file view offers — the offset
+   within the 32 KiB SRAM image is `7 * $1000 + $F00 = $7F00`).
+2. Verify the magic and checksum before trusting the rest.
+3. `failed_bitset` plus `include/tests.inc` gives the full list of
+   failed test IDs without needing to screen-scrape the UI.
+
+## Implementation
+
+See `WriteResultBlock` in `src/test_common.asm`, called once from
+`src/main.asm` after the full safe test batch (including EX01/EX02)
+completes.
