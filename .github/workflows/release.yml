@@ -2,9 +2,12 @@
 # push/PR — kept as a manual, on-demand action so ordinary commits
 # don't create a release for every change.
 #
-# Run it from the repo's Actions tab ("Run workflow"). It builds the
-# default (non-destructive) ROM, runs the static verifier, and
-# publishes a GitHub release tagged with the 7-character short commit
+# Run it from the repo's Actions tab ("Run workflow"). It builds and
+# statically verifies BOTH configurations — the default safe suite and
+# the ENABLE_DESTRUCTIVE_FLASH_TESTS=1 build (TD1-TD6 are behind an
+# `IF DEF` in source, so the default `make` alone would never catch a
+# regression there) — and publishes both as separate, clearly labeled
+# assets on a GitHub release tagged with the 7-character short commit
 # hash — the same hash the ROM itself shows on screen
 # (see src/build_info.asm / docs/screen-guide.md), so a release tag
 # and a screenshot from that build can always be matched up.
@@ -41,15 +44,32 @@ jobs:
           tar -xf rgbds.tar.xz -C "$HOME/rgbds"
           echo "$HOME/rgbds" >> "$GITHUB_PATH"
 
-      - name: Build (default/safe configuration)
-        run: make
-
-      - name: Static verification
-        run: make verify
-
       - name: Determine build id
         id: build_id
         run: echo "sha7=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build + verify default (safe) configuration
+        run: |
+          make
+          make verify
+
+      - name: Stage default build
+        run: |
+          mkdir -p dist
+          cp build/mbc6-test.gbc dist/mbc6-test.gbc
+          cp build/mbc6-test.map dist/mbc6-test.map
+          cp build/mbc6-test.sym dist/mbc6-test.sym
+
+      - name: Build + verify destructive-tests configuration
+        run: |
+          make ENABLE_DESTRUCTIVE_FLASH_TESTS=1
+          make verify
+
+      - name: Stage destructive build
+        run: |
+          cp build/mbc6-test.gbc dist/mbc6-test-DESTRUCTIVE.gbc
+          cp build/mbc6-test.map dist/mbc6-test-DESTRUCTIVE.map
+          cp build/mbc6-test.sym dist/mbc6-test-DESTRUCTIVE.sym
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -58,11 +78,16 @@ jobs:
           name: ${{ steps.build_id.outputs.sha7 }}
           target_commitish: ${{ github.sha }}
           body: |
-            Automated build from commit `${{ steps.build_id.outputs.sha7 }}`.
-            Default (non-destructive) configuration — see README.md
-            for how to build with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1`.
-            See docs/screen-guide.md to read the on-screen results.
+            Automated build from commit `${{ steps.build_id.outputs.sha7 }}`. Both configurations built and statically verified (`make verify`).
+
+            - **`mbc6-test.gbc`** — default, safe configuration. No flash erase/program/protect code path is reachable. This is the one to use for normal MBC6 conformance testing.
+            - **`mbc6-test-DESTRUCTIVE.gbc`** — built with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` (TD1-TD6). May permanently erase/reprogram real cartridge flash. Requires holding A+B+START to confirm before anything destructive runs. Treat as an emulator/disposable-flash fixture, not something to run on cartridge data you care about.
+
+            See `docs/screen-guide.md` to read the on-screen results.
           files: |
-            build/mbc6-test.gbc
-            build/mbc6-test.map
-            build/mbc6-test.sym
+            dist/mbc6-test.gbc
+            dist/mbc6-test.map
+            dist/mbc6-test.sym
+            dist/mbc6-test-DESTRUCTIVE.gbc
+            dist/mbc6-test-DESTRUCTIVE.map
+            dist/mbc6-test-DESTRUCTIVE.sym
