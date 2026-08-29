@@ -1,0 +1,82 @@
+# Manual build-and-publish workflow. Deliberately NOT triggered on
+# push/PR — the user asked to keep this a manual, on-demand action so
+# ordinary commits don't spam a release for every change.
+#
+# Run it from the repo's Actions tab ("Run workflow"). It builds the
+# default (non-destructive) ROM, runs the static verifier, and
+# publishes a Gitea release tagged with the 7-character short commit
+# hash — the same hash the ROM itself shows on screen
+# (see src/build_info.asm / docs/screen-guide.md), so a release tag
+# and a screenshot from that build can always be matched up.
+#
+# Assumptions this workflow makes about the Gitea Actions runner —
+# adjust if they don't hold on this server:
+#   - `runs-on: ubuntu-latest` matches a registered runner's label.
+#     Self-hosted runners often use a different label; check
+#     Settings > Actions > Runners and change the line below if so.
+#   - The runner has outbound internet access, to download RGBDS from
+#     its GitHub release and (via actions/checkout) fetch this repo.
+#   - The built-in `secrets.GITHUB_TOKEN` has "contents: write"
+#     permission on this repo (Gitea grants this by default in most
+#     setups). If release creation fails with a permission error,
+#     create a Personal Access Token with repo write access, add it
+#     as a repo secret (e.g. RELEASE_TOKEN), and swap the token below.
+
+name: Build and publish release
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  RGBDS_VERSION: "1.0.3"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install RGBDS
+        run: |
+          set -eu
+          curl -sL -o rgbds.tar.xz \
+            "https://github.com/gbdev/rgbds/releases/download/v${RGBDS_VERSION}/rgbds-linux-x86_64.tar.xz"
+          mkdir -p "$HOME/rgbds"
+          tar -xf rgbds.tar.xz -C "$HOME/rgbds"
+          echo "$HOME/rgbds" >> "$GITHUB_PATH"
+
+      - name: Build (safe/default configuration only)
+        run: make
+
+      - name: Static verification
+        run: make verify
+
+      - name: Determine build id
+        id: build_id
+        run: echo "sha7=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create Gitea release and upload ROM
+        env:
+          GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.build_id.outputs.sha7 }}
+          API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
+        run: |
+          set -eu
+          release_json=$(curl -sf -X POST "$API/releases" \
+            -H "Authorization: token $GITEA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"${{ github.sha }}\",\"name\":\"$TAG\",\"body\":\"Automated build from commit \`$TAG\`. Default (non-destructive) configuration. See docs/screen-guide.md to read the on-screen results.\"}")
+          release_id=$(printf '%s' "$release_json" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+
+          for f in build/mbc6-test.gbc build/mbc6-test.map build/mbc6-test.sym; do
+            name=$(basename "$f")
+            curl -sf -X POST "$API/releases/$release_id/assets?name=$name" \
+              -H "Authorization: token $GITEA_TOKEN" \
+              -F "attachment=@$f"
+          done

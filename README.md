@@ -95,6 +95,21 @@ CGB-only, and at least one widely-used emulator (mGBA) was observed
 selecting DMG vs. CGB mode partly from the file extension rather than
 the header alone. See `docs/mbc6-notes.md`.
 
+Every build embeds a short build identifier (the 7-character git
+commit hash, `+` appended if the working tree had uncommitted changes)
+and shows it on every screen — see "Identifying a build" below.
+
+## Publishing a release
+
+`.gitea/workflows/release.yml` builds the default (non-destructive)
+configuration, runs `make verify`, and publishes a Gitea release
+tagged with the short commit hash — the same one the ROM itself shows
+on screen. It's manually triggered only (`workflow_dispatch`, no
+push/PR trigger), so ordinary commits never create a release on their
+own. Run it from the repo's Actions tab when you actually want to cut
+one. See the comments at the top of that file for the assumptions it
+makes about the runner (network access, token permissions).
+
 ## Running
 
 Load `build/mbc6-test.gbc` in an MBC6-capable emulator or on real
@@ -130,6 +145,16 @@ does not run any MBC6 test.
 **See `docs/screen-guide.md` for the full legend** — what every
 three-letter test code and every field on each page means, without
 needing to read source code.
+
+## Identifying a build
+
+Every screen shows a build line in the bottom-left corner, e.g.
+`B:95ECD80` (or `B:95ECD80+` if it was built from an uncommitted, dirty
+working tree). That's the 7-character short hash of the git commit it
+was built from — the same tag a published release uses (see
+"Publishing a release" above). When reporting a bug, include this
+line; it pins down exactly which source revision produced the ROM
+without needing to compare checksums.
 
 ## Interpreting results
 
