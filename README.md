@@ -101,14 +101,15 @@ and shows it on every screen — see "Identifying a build" below.
 
 ## Publishing a release
 
-`.gitea/workflows/release.yml` builds the default (non-destructive)
-configuration, runs `make verify`, and publishes a Gitea release
-tagged with the short commit hash — the same one the ROM itself shows
-on screen. It's manually triggered only (`workflow_dispatch`, no
-push/PR trigger), so ordinary commits never create a release on their
-own. Run it from the repo's Actions tab when you actually want to cut
-one. See the comments at the top of that file for the assumptions it
-makes about the runner (network access, token permissions).
+Releases are published from GitHub (this repo's history is also
+mirrored to a private Gitea instance for backup, but that's not where
+releases are cut). `.github/workflows/release.yml` builds the default
+(non-destructive) configuration, runs `make verify`, and publishes a
+GitHub release tagged with the short commit hash — the same one the
+ROM itself shows on screen. It's manually triggered only
+(`workflow_dispatch`, no push/PR trigger), so ordinary commits never
+create a release on their own. Run it from the repo's Actions tab on
+GitHub when you actually want to cut one.
 
 ## Running
 
