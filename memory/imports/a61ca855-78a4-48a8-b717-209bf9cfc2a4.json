@@ -1,0 +1,53 @@
+{
+  "id": "a61ca855-78a4-48a8-b717-209bf9cfc2a4",
+  "format": "omm-history-v1",
+  "platform": "claude-code",
+  "session_id": "session_01SpE5r29YpM4cJy328kbCXt",
+  "source_ref": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+  "workstream_id": "mbc6test",
+  "status": "accepted",
+  "staged_at": "2026-10-01T11:55:07+00:00",
+  "records": [
+    {
+      "kind": "contract",
+      "title": "MBC6 conformance ROM scope is CGB-only and covers all 128 physical ROM banks",
+      "content": "The original user specification requires a self-contained 1 MiB CGB-only MBC6 conformance ROM, with unique deterministic signatures for all 128 physical 8 KiB banks and independent tests of both ROM and SRAM windows. Do not broaden the target to DMG/MGB/SGB or dual-mode operation. Test data, graphics, fonts, and fixtures must be generated from source; do not use commercial Net de Get ROM data, copyrighted assets, extracted firmware, or proprietary binaries.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "Claude Code conversation message 1, original project prompt",
+        "pinned mbc6test CLAUDE.md and README references imported separately"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "frozen-contract",
+        "cgb-only",
+        "test-scope",
+        "generated-fixtures"
+      ]
+    },
+    {
+      "kind": "constraint",
+      "title": "Mapper-changing routines stay in fixed ROM and flash polling stays bounded",
+      "content": "The user specification requires startup, MBC6 register helpers, dispatcher, display, result formatting, input, flash helpers, and core assertions to run from fixed ROM at $0000-$3FFF. Never execute code from a switchable window while remapping that same address space. Flash status polling must have a software timeout, preserve diagnostic status, and continue safely where possible; no test may hang forever.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "Claude Code conversation message 1, sections 6 and 13"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "frozen-contract",
+        "mapper-safety",
+        "timeouts",
+        "do-not-assume"
+      ]
+    }
+  ],
+  "accepted_at": "2026-10-01T11:55:24+00:00",
+  "accepted_by": "codex-migration",
+  "record_ids": [
+    "b0e91dd2-7539-4dc6-8c89-f715b2b9e62c",
+    "bc641994-d0de-4db2-abe5-d2f7454ce0ff"
+  ]
+}

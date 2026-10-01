@@ -13,3 +13,6 @@ __pycache__/
 /*.sav
 /*.sav.flash
 /gbe.ini
+
+# Índice de busca OMM derivado; a memória canônica fica em memory/
+.omm/

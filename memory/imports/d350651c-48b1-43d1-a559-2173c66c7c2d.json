@@ -1,0 +1,107 @@
+{
+  "id": "d350651c-48b1-43d1-a559-2173c66c7c2d",
+  "format": "omm-history-v1",
+  "platform": "claude-code",
+  "session_id": "session_01SpE5r29YpM4cJy328kbCXt",
+  "source_ref": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+  "workstream_id": "mbc6test",
+  "status": "accepted",
+  "staged_at": "2026-10-01T11:53:05+00:00",
+  "records": [
+    {
+      "kind": "observation",
+      "title": "Safe-suite and destructive-flash runtime results were reported separately",
+      "content": "The archived session reported a historical safe-suite run of 20 tests: 12 PASS, 3 FAIL, and 5 INFO, with screen values independently checked against raw emulator memory. For the opt-in destructive suite, TD4 passed at runtime, TD5 reports INFO and TD6 SKIP by design, while TD1-TD3 remained unconfirmed at runtime because available emulators did not implement the required flash-write behavior correctly. These are historical results, not current-build claims.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "Claude Code conversation messages 8-11",
+        "GBE+ and mGBA validation discussed in archived session"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "runtime-validation",
+        "historical-result",
+        "do-not-assume"
+      ]
+    },
+    {
+      "kind": "decision",
+      "title": "Flash buffer commit uses literal zero and reset is issued once",
+      "content": "The implementation discussion corrected two flash command details after cross-checking shonumi/dandocs, FlashGBX, and sanni/cartreader: the buffered-program commit is a distinct write of literal $00, not a repeated data byte, and the reset command $F0 is issued once per window. The session also applied the confirmed $1000/$0C00 flash enable sequence before destructive operations. Preserve the cited source distinctions and do not infer current implementation state without checking code.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "Claude Code conversation messages 1-3 and 7",
+        "https://github.com/shonumi/gbe-plus",
+        "https://github.com/sanni/cartreader"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "flash-protocol",
+        "decision",
+        "provenance"
+      ]
+    },
+    {
+      "kind": "observation",
+      "title": "Real cartridge photos confirmed the Macronix flash part",
+      "content": "The owner supplied Game Boy hardware database photos of two physical MBC6 cartridges. The session reported that both showed the Macronix MX29F008TC-14 flash chip, independently corroborating the project's existing target. The same photos showed a Mitsumi MM1134A supervisor/reset component; its relationship, if any, to MBC6 write protection or register $1000 was explicitly left unknown and was not made normative behavior.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "https://gbhwdb.gekkio.fi/cartridges/CGB-BMVJ-0/gekkio-2.html",
+        "https://gbhwdb.gekkio.fi/cartridges/CGB-BMVJ-0/gekkio-1.html"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "hardware-evidence",
+        "flash-part",
+        "do-not-assume"
+      ]
+    },
+    {
+      "kind": "unknown",
+      "title": "Mitsumi MM1134A role in MBC6 flash write protection is unresolved",
+      "content": "Photos of two MBC6 cartridges show a Mitsumi MM1134A supervisor/reset component. The archived session found no source proving whether it interacts with MBC6 registers such as $1000 or is only part of independent power/reset protection. Keep this as an explicit unknown; do not encode a software behavior assumption without further hardware evidence.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "https://gbhwdb.gekkio.fi/cartridges/CGB-BMVJ-0/gekkio-2.html",
+        "https://gbhwdb.gekkio.fi/cartridges/CGB-BMVJ-0/gekkio-1.html"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "unknown",
+        "hardware-research",
+        "do-not-assume"
+      ]
+    },
+    {
+      "kind": "constraint",
+      "title": "Explain every on-screen test status and distinguish tests absent from a build",
+      "content": "The project owner asked what the screen status letters mean. The screen guide defines P as PASS, F as FAIL, S as SKIP, I as INFO, and a dash as not run in this build. Preserve this user-facing explanation and distinguish a test that was not compiled into a build from one that passed.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "Claude Code conversation messages 16-17",
+        "docs/screen-guide.md status-letters section, as cited in the archived session"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "user-interface",
+        "verification",
+        "do-not-assume"
+      ]
+    }
+  ],
+  "accepted_at": "2026-10-01T11:55:24+00:00",
+  "accepted_by": "codex-migration",
+  "record_ids": [
+    "fda1b965-0dd7-43d7-b14e-29e83d483b84",
+    "fa14bac1-3376-4474-804f-3df0bd45489c",
+    "858e3cad-8fc8-4a70-b283-7a1fe29d88a2",
+    "ee5097df-a520-4726-95c4-da75093ba8b3",
+    "53936470-44f0-4823-8138-cc74d4a5ccd2"
+  ]
+}
