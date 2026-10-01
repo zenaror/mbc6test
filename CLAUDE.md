@@ -425,3 +425,9 @@ A mapper/test change is not done until:
 7. the final response states what runtime behavior still needs to be checked in BGB/other emulators or hardware.
 
 Runtime results from the user or emulator developer are evidence to iterate on the tests; do not rewrite expected hardware behavior merely to make a particular emulator pass.
+
+## Memória compartilhada OMM
+
+Consulte [OMM.md](OMM.md) e pesquise em `memory/` antes de repetir uma investigação. Ao guardar uma descoberta útil, registre sua origem, versão e evidência. Ao encerrar uma sessão, atualize o handoff do OMM com o estado e a próxima ação.
+
+As anotações do OMM não substituem a hierarquia de fontes deste arquivo. Uma observação de emulador ou uma hipótese experimental não vira requisito normativo sem evidência apropriada. A aprovação em `make verify` demonstra invariantes estáticos da ROM; não prova funcionamento do mapper em hardware.

@@ -1,0 +1,143 @@
+{
+  "id": "f000b2c1-df6f-431f-9e83-b1f83587f7f5",
+  "format": "omm-history-v1",
+  "platform": "claude-code",
+  "session_id": "session_01SpE5r29YpM4cJy328kbCXt",
+  "source_ref": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+  "workstream_id": "mbc6test",
+  "status": "accepted",
+  "staged_at": "2026-10-01T11:51:18+00:00",
+  "records": [
+    {
+      "kind": "observation",
+      "title": "Archived Claude Code conversation identified as the primary MBC6Test history",
+      "content": "The project owner identified and the authenticated browser session confirmed this Claude Code session as the primary MBC6Test conversation. Its hosted conversation was reviewed for durable project memory; the raw transcript was not copied into OMM. Related local continuation logs 81880153-b86e-4d1e-a605-e1fe9c128d91 and 95f4383e-23d6-4be5-a216-b2ecaba1e0c6 contain compacted summaries and later exchanges, but are not assumed to be a complete copy of the hosted session.",
+      "source": "https://claude.ai/code/session_01SpE5r29YpM4cJy328kbCXt",
+      "evidence": [
+        "user-provided Claude Code session URL",
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "claude-local-session-id:95f4383e-23d6-4be5-a216-b2ecaba1e0c6",
+        "Claude Code session visually inspected in authenticated browser on 2026-10-01"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "conversation-provenance",
+        "claude-code"
+      ]
+    },
+    {
+      "kind": "constraint",
+      "title": "MBC6Test changes require genuine runtime evidence and readable results",
+      "content": "The project owner rejected treating a successful build as sufficient validation and required real runtime testing. Test outcomes must be human-readable on-screen, including a result grid, failure-detail view, and INFO view, rather than only a one-line summary. Keep static verification and runtime mapper evidence distinct.",
+      "source": "claude-local-session://81880153-b86e-4d1e-a605-e1fe9c128d91",
+      "evidence": [
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "claude-local-session-id:95f4383e-23d6-4be5-a216-b2ecaba1e0c6"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "verification",
+        "frozen-contract",
+        "do-not-assume"
+      ]
+    },
+    {
+      "kind": "constraint",
+      "title": "Keep emulator gaps separate from normative MBC6 expectations",
+      "content": "Historical implementation work cross-checked behavior against GBE+ and mGBA while preserving emulator limitations as emulator-specific evidence. Do not change normative test expectations to accommodate an emulator gap; identify the emulator and version and report that gap separately. BGB was not treated as a usable MBC6 runtime oracle in that work.",
+      "source": "claude-local-session://81880153-b86e-4d1e-a605-e1fe9c128d91",
+      "evidence": [
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "claude-local-session-id:95f4383e-23d6-4be5-a216-b2ecaba1e0c6"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "emulator-validation",
+        "do-not-assume",
+        "source-precedence"
+      ]
+    },
+    {
+      "kind": "decision",
+      "title": "Release builds are manual GitHub Actions runs with traceable build IDs",
+      "content": "The owner chose a manually triggered GitHub Actions release workflow, with a seven-character commit hash as the release tag and the same build identifier displayed in the ROM title/results UI. Builds should not publish automatically on every push. Gitea is a backup mirror, not the release destination.",
+      "source": "claude-local-session://81880153-b86e-4d1e-a605-e1fe9c128d91",
+      "evidence": [
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "claude-local-session-id:95f4383e-23d6-4be5-a216-b2ecaba1e0c6"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "decision",
+        "release-process",
+        "build-provenance"
+      ]
+    },
+    {
+      "kind": "contract",
+      "title": "Publish and verify both safe and explicitly destructive configurations",
+      "content": "The default build keeps destructive flash tests disabled. The manual release pipeline also builds and verifies an explicitly enabled destructive configuration and publishes it as a separately named, clearly labeled asset. Keep the default safe ROM and destructive ROM distinguishable in both artifact name and release description.",
+      "source": "claude-local-session://81880153-b86e-4d1e-a605-e1fe9c128d91",
+      "evidence": [
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "claude-local-session-id:95f4383e-23d6-4be5-a216-b2ecaba1e0c6"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "frozen-contract",
+        "flash-safety",
+        "release-process"
+      ]
+    },
+    {
+      "kind": "observation",
+      "title": "The linked Am29F400 datasheet is analogous, not the MBC6 cartridge flash datasheet",
+      "content": "The historical discussion clarified that the datasheet linked from the NP GB Memory research page is for AMD/Spansion Am29F400, not the Macronix MX29F008TC/ATC used in the cartridge. It was not the implementation authority; the work relied on the iceboy reverse-engineering notes and cross-checks against hardware tools. Treat command similarities as cross-check context, not proof that the two flash parts are identical.",
+      "source": "claude-local-session://81880153-b86e-4d1e-a605-e1fe9c128d91",
+      "evidence": [
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "https://iceboy.a-singer.de/doc/np_gb_memory.html"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "flash-provenance",
+        "datasheet",
+        "do-not-assume"
+      ]
+    },
+    {
+      "kind": "constraint",
+      "title": "Keep MBC6 communication in Brazilian Portuguese and require explicit commit or push requests",
+      "content": "The project owner established Brazilian Portuguese as the conversation language. The historical workflow also required explicit user direction before committing or pushing changes; preserve that project-specific preference when working in the MBC6Test repository.",
+      "source": "claude-local-session://81880153-b86e-4d1e-a605-e1fe9c128d91",
+      "evidence": [
+        "claude-local-session-id:81880153-b86e-4d1e-a605-e1fe9c128d91",
+        "claude-local-session-id:95f4383e-23d6-4be5-a216-b2ecaba1e0c6"
+      ],
+      "confidence": "high",
+      "tags": [
+        "project:mbc6test",
+        "user-preference",
+        "workflow",
+        "do-not-assume"
+      ]
+    }
+  ],
+  "accepted_at": "2026-10-01T11:55:24+00:00",
+  "accepted_by": "codex-migration",
+  "record_ids": [
+    "6d84cdba-858c-43f0-9a24-8747d0371020",
+    "1f223fb6-2063-491c-9cf6-23f57a71fc78",
+    "825f0a81-6bb4-49eb-8f17-97a990bf3b2b",
+    "8893d080-00ba-434e-ac32-5a2a23468b67",
+    "e546048b-28e1-4aaa-8296-bf5b4bccdd2d",
+    "cb6f380a-f018-4e80-b4ed-2852b993fd0a",
+    "70698f03-bebe-4ebc-8a1c-9f8286218cd5"
+  ]
+}
