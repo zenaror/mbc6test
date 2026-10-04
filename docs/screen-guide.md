@@ -134,11 +134,14 @@ EX2 C6ROMFLAG =$00
 - **T35 SECTOR0 ST** — the raw byte observed at the flash status
   address for sector 0, outside of any erase/program operation.
 - **EX1 BANK $FF DATA** — the first 4 of the 16 bytes read back when
-  ROM bank `$FF` (invalid/out-of-range) is selected. If these spell
-  `4D 36 42 4B` ("M6BK" in ASCII), that's this ROM's own bank-127
-  signature — meaning the high bit of the bank number got silently
-  masked off (bank `$FF` behaved like bank `$7F`), not that ROM
-  became unreadable.
+  ROM bank `$FF` (invalid/out-of-range) is selected. `4D 36 42 4B`
+  ("M6BK" in ASCII) is the magic that starts *every* bank's signature,
+  so it only shows that some valid ROM bank is still mapped (ROM did
+  not become unreadable) — not which bank. The bank number is the 5th
+  signature byte, which this page doesn't show. In GBE+ and mGBA, the
+  code maps bank `$FF` to bank `$7F` (GBE+ masks the high bit; mGBA
+  wraps by ROM size); what real hardware does is unknown — the GBDev
+  research thread reported the high bit appearing to unmap ROM.
 - **EX2 C6ROMFLAG** — `$00` if window A still read like ordinary ROM
   after writing the undocumented value `$C6` to its source-select
   register; `$01` if it read like something else.
