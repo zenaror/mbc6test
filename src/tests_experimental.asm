@@ -1,6 +1,6 @@
 ; Experimental / observational tests: EX01, EX02.
 ;
-; CLAUDE.md "Undefined / experimental behavior": the historical GBDev
+; docs/project-rules.md "Undefined / experimental behavior": the historical GBDev
 ; MBC6 research thread (project reference #2) mentions two behaviors
 ; that are not confirmed by current Pan Docs or the iceboy flash
 ; documentation. These are recorded as INFO only, never PASS/FAIL, and

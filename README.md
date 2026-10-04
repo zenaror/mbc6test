@@ -182,7 +182,7 @@ emulator.
 
 ## Sources
 
-See `CLAUDE.md` for the full reference list and precedence order.
+See `docs/project-rules.md` for the full reference list and precedence order.
 Primary sources, in precedence order:
 
 1. [Pan Docs — MBC6](https://gbdev.io/pandocs/MBC6.html)
@@ -204,8 +204,11 @@ detail — [FlashGBX](https://github.com/lesserkuma/FlashGBX) and
 
 ```text
 .
+├── AGENTS.md              — short working guide for agents (pt-BR)
+├── OMM.md                 — how project memory (OMM) is used
 ├── Makefile
 ├── docs/
+│   ├── project-rules.md   — full project rules (formerly CLAUDE.md)
 │   ├── mbc6-notes.md      — implementation notes / findings
 │   ├── screen-guide.md    — legend for what the ROM shows on screen
 │   ├── test-matrix.md     — per-test authoritative reference

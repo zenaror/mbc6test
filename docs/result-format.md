@@ -1,6 +1,7 @@
 # Machine-readable result block
 
-Optional, for emulator CI automation (CLAUDE.md §15). Written once, at
+Optional, for emulator CI automation (original project prompt §15; see
+also `docs/project-rules.md` "SRAM testing"). Written once, at
 the very end of the safe test batch, **after** T20-T24 (the SRAM
 banking tests) have already run and recorded their own PASS/FAIL —
 so this block never influences, and is never influenced by, those

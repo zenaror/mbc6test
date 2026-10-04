@@ -1,12 +1,12 @@
 ; SRAM tests: T20-T24.
-; See docs/test-matrix.md and CLAUDE.md "SRAM testing" / "Required
+; See docs/test-matrix.md and docs/project-rules.md "SRAM testing" / "Required
 ; safe tests". All routines run from fixed ROM (they write MBC6
 ; registers).
 ;
 ; Ordering matters: T21 and T22 populate every physical 4 KiB SRAM
 ; bank (0-7) with SRAMPatternByte(bank, idx) at two offsets each.
 ; Because both SRAM windows draw from the same shared 8-bank pool
-; (CLAUDE.md's SRAM Bank A/B registers both index the one 32 KiB
+; (docs/project-rules.md's SRAM Bank A/B registers both index the one 32 KiB
 ; SRAM), T23 and T24 deliberately re-use that already-written data
 ; instead of writing their own — main.asm's dispatcher must therefore
 ; run T20, T21, T22, T23, T24 in that order.
@@ -61,7 +61,7 @@ SRAMPatternByte:
 ; --- Test_T20 --- SRAM disabled behavior.
 ; Only tests what is actually documented: RAM-enable gating writes.
 ; Does not assume any particular open-bus read value while disabled
-; (CLAUDE.md: "Do not require a specific open-bus byte if SRAM is
+; (docs/project-rules.md: "Do not require a specific open-bus byte if SRAM is
 ; disabled unless authoritative documentation defines it").
 EXPORT Test_T20
 Test_T20:
@@ -94,7 +94,7 @@ Test_T20:
 
 ; --- Test_T21 --- SRAM Bank A sweep, banks 0-7, two offsets each.
 ; Writes all banks first, then verifies all banks, so a bank's data
-; must have survived every intervening bank switch (CLAUDE.md:
+; must have survived every intervening bank switch (docs/project-rules.md:
 ; "Confirm that values survive bank switches during the same run").
 EXPORT Test_T21
 Test_T21:

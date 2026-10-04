@@ -1,6 +1,6 @@
 ; MBC6 mapper register helpers.
 ;
-; CLAUDE.md "Fixed-ROM safety rule": any routine that writes MBC6
+; docs/project-rules.md "Fixed-ROM safety rule": any routine that writes MBC6
 ; ROM/Flash mapping registers must execute from $0000-$3FFF. Every
 ; routine in this file lives in ROM0 for that reason — never move any
 ; of these into a ROMX bank.
@@ -76,7 +76,7 @@ MBC6_DisableRAM:
 
 ; --- MBC6_EnableFlash / DisableFlash ---
 ; Flash Enable ($0C00-$0FFF). Distinct from Flash Write Enable/WP
-; ($1000) implemented in flash.asm — CLAUDE.md warns not to conflate
+; ($1000) implemented in flash.asm — docs/project-rules.md warns not to conflate
 ; the two: this bit exposes flash for reading/ID/commands, WP protects
 ; sector 0 and the hidden region specifically, not a generic global
 ; write-enable.

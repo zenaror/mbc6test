@@ -1,34 +1,36 @@
-# Memória do MBC6 Test ROM no OMM
+# OMM no MBC6 Test ROM
 
-A memória do projeto fica em dois lugares:
+A memória compartilhada do projeto (OMM) fica fora deste repositório.
 
-- **OMM compartilhada**, consultada pelo MCP no escopo `mbc6test`, com backup no `ai-omm-backup`. É a mais completa: o histórico consolidado das conversas (2026-10-03) e as descobertas técnicas registradas em 2026-10-04 estão lá.
-- **Pasta `memory/` deste repositório**, um retrato feito no commit `d151752` (2026-10-01) que viaja com o código pelo Git. Ela não recebeu os registros posteriores.
+## Onde fica cada coisa
 
-Ainda falta decidir qual dos dois é o canônico para o MBC6: o registro OMM `cb0b46d8` (2026-10-01) trata `memory/` como a memória ativa, mas os registros mais novos foram gravados na OMM compartilhada. Até o Rafael decidir, consulte os dois e prefira a OMM quando divergirem.
+- **Dados da OMM**: memórias, fontes importadas, skills, papéis e handoffs do MBC6. Ficam somente no backup `ai-omm-backup` e são acessados pelo MCP da OMM, no escopo `mbc6test`. Essa é a memória canônica do projeto.
+- **Programa da OMM**: o repositório `ai-omm` contém só a aplicação, sem dados pessoais.
+- **Documentos do próprio projeto**: `AGENTS.md`, este `OMM.md`, `README.md`, `docs/`, o código e o workflow ficam neste repositório. São as fontes de conferência; a OMM os cita e guarda cópias como fontes, mas não os substitui. As regras e fontes completas estão em `docs/project-rules.md` (o antigo `CLAUDE.md`) e nos outros documentos de `docs/`; o `AGENTS.md` é só um guia curto de trabalho.
 
-As regras e fontes completas estão no `CLAUDE.md` e nos documentos técnicos (`docs/`). O `AGENTS.md` é só um guia curto de trabalho.
+## Nada de dados da OMM aqui
 
-## Uso rápido
+A pasta `memory/` e o índice local `.omm/` eram cópias legadas de dados da OMM, criadas no commit `d151752` (2026-10-01). Foram removidos em 2026-10-04. O conteúdo deles está no `ai-omm-backup` (os 22 registros, como `superseded`, e os 3 manifestos de importação) e continua no histórico Git.
 
-Pelo MCP da OMM: `context` ou `search` com `scope: "mbc6test"`, `get_memory` para abrir um registro e `search_sources`/`read_source` para conferir a origem.
+Não recrie dados da OMM neste repositório, nem rodando a CLI `omm` nesta pasta.
 
-Com o comando OMM instalado (ele não estava instalado nesta máquina em 2026-10-04), abra o terminal nesta pasta:
+## Como consultar e registrar
 
-```sh
-omm search "flash JEDEC ID"
-omm context "MBC6 source precedence"
-omm remember --kind observation --title "Resultado observado" --content "O que ocorreu, em qual versão e em que condições" --source "docs/mbc6-notes.md" --evidence "docs/test-matrix.md: T31"
-omm handoff --status in_progress --summary "Onde a investigação parou" --next "Próxima ação"
-```
+Pelo MCP da OMM, no escopo `mbc6test`:
 
-O histórico importado da conversa Claude Code permanece identificável pelas fontes e IDs de sessão nas anotações. A transcrição inteira não foi copiada para a memória.
+- `context` ou `search` para encontrar registros e `get_memory` para abrir um;
+- `search_sources` e `read_source` para conferir a origem;
+- `remember` (ou `propose_memory`, quando a pessoa for revisar) para registrar conhecimento novo, com origem e evidência; marque o registro antigo como `superseded` com `set_memory_status`;
+- `handoff` para deixar o estado real, os bloqueios e a próxima ação.
+
+Se usar a CLI `omm`, aponte-a para os dados da OMM, nunca para esta pasta. O backup é sincronizado pelo mecanismo normal da OMM (painel "Sincronizar backup" ou `omm sync`), e não por commits neste repositório.
+
+O histórico importado da conversa Claude Code continua identificável pelas fontes e pelos IDs de sessão nas anotações. A transcrição inteira não foi copiada para a OMM; o que existe são resumos, o texto visível parcial e o OCR aproximado das capturas de tela.
 
 ## Como usar com segurança
 
 - Consulte a memória antes de repetir uma investigação e abra as fontes citadas antes de mudar um contrato.
-- Siga a ordem de fontes e os limites de evidência descritos no `CLAUDE.md`.
+- Siga a ordem de fontes e os limites de evidência de `docs/project-rules.md`.
 - Separe falhas de emuladores específicos de expectativas normativas sobre hardware.
-- A busca do OMM é um índice rápido das anotações, não prova por si só que uma afirmação esteja correta.
-- O índice local fica em `.omm/`, é ignorado pelo Git e pode ser recriado com `omm rebuild`.
-- A skill opcional `mbc6test-expert` complementa a memória com orientação de domínio; os fatos específicos do projeto ficam na OMM, em `memory/` e nas fontes citadas.
+- A busca da OMM é um índice, não prova: confirme no código, em `docs/` e nas fontes originais.
+- A skill `mbc6test-expert`, guardada na OMM, traz orientação de domínio; os fatos do projeto ficam na OMM e nas fontes citadas.

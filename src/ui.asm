@@ -2,7 +2,7 @@
 ; plain string printer, and a 3-page results viewer (all 26 tests'
 ; PASS/FAIL/SKIP/INFO status, a detailed first-failure page, and an
 ; INFO/experimental page) with A-button paging. This is the ROM's only
-; way to show its own results — CLAUDE.md requires the detail to be
+; way to show its own results — docs/project-rules.md requires the detail to be
 ; visible on-screen, not just inferable from a summary count.
 
 INCLUDE "hardware.inc"
@@ -520,7 +520,7 @@ LabelActual:
 ; INFO/experimental observations: T34's hidden-region checksum, T35's
 ; observed sector-0 status byte, EX01's first bytes at bank $FF, and
 ; EX02's ROM-vs-other outcome flag. None of these are PASS/FAIL —
-; CLAUDE.md "Undefined / experimental behavior".
+; docs/project-rules.md "Undefined / experimental behavior".
 DrawInfoPage:
     call UI_Init
     ld hl, InfoTitleText
@@ -657,7 +657,7 @@ CgbRequiredText:
 
 ; ==========================================================================
 ; Destructive-mode confirmation UI. Only assembled into
-; ENABLE_DESTRUCTIVE_FLASH_TESTS=1 builds (CLAUDE.md: "require
+; ENABLE_DESTRUCTIVE_FLASH_TESTS=1 builds (docs/project-rules.md: "require
 ; deliberate multi-button confirmation before the first destructive
 ; operation").
 ; ==========================================================================

@@ -4,7 +4,7 @@
 ; (RST/interrupt vectors, entry point, and zeroed placeholders for the
 ; header fields the Makefile's `rgbfix` invocation fills in: Nintendo
 ; logo, title, CGB flag, licensee, cartridge type, ROM/RAM size,
-; checksums). See CLAUDE.md "Required ROM format" and Pan Docs
+; checksums). See docs/project-rules.md "Required ROM format" and Pan Docs
 ; "The Cartridge Header" (https://gbdev.io/pandocs/The_Cartridge_Header.html).
 ;
 ; Physical 8 KiB bank signatures for banks 0 and 1 (which live in this
@@ -105,4 +105,4 @@ SECTION "Global Checksum", ROM0[$14E]
 ; offset $1FF0/$3FF0 exactly like every other bank; see
 ; tools/mbc6_layout.py. Bank 0's signature at CPU address $1FF0 is
 ; well past the header ($14F) and past all code placed by main.asm et
-; al (kept short per CLAUDE.md's "Fixed-ROM safety rule").
+; al (kept short per docs/project-rules.md's "Fixed-ROM safety rule").

@@ -4,7 +4,7 @@
 ; the iceboy NP GB Memory documentation (project reference #3), which
 ; states the flash behavior documented there also applies to Net de
 ; Get's 29F008TC, with the documented JEDEC device-ID difference
-; ($81 instead of $89). See CLAUDE.md "Flash rules": command sequences
+; ($81 instead of $89). See docs/project-rules.md "Flash rules": command sequences
 ; must be centralized here, not duplicated across test cases.
 ;
 ; All routines here run from fixed ROM (they write MBC6 registers).
@@ -25,7 +25,7 @@ SECTION "Flash Helpers", ROM0
 ; ($1000) before writing Flash Enable ($0C00), then dropping $1000
 ; back to 0 — matches the real, hardware-tested sequence in FlashGBX's
 ; MBC6 driver (github.com/lesserkuma/FlashGBX, Mapper.py class
-; DMG_MBC6.EnableFlash), not just CLAUDE.md's brief register
+; DMG_MBC6.EnableFlash), not just docs/project-rules.md's brief register
 ; descriptions. It's unclear from available sources whether $0C00
 ; alone would have worked; this follows what's confirmed to work
 ; against real Net de Get hardware rather than guessing. Destructive
@@ -115,7 +115,7 @@ Flash_EnterHiddenMode:
 
 ; ==========================================================================
 ; Everything below is only assembled into ENABLE_DESTRUCTIVE_FLASH_TESTS=1
-; builds (CLAUDE.md "Destructive flash policy": default must be OFF, and
+; builds (docs/project-rules.md "Destructive flash policy": default must be OFF, and
 ; "no code path should issue erase, program, protect, or unprotect
 ; commands" when it's off). The default Makefile invocation never
 ; defines this symbol as 1, so none of this exists in a normal build.
@@ -130,7 +130,7 @@ SECTION "Flash Destructive Helpers", ROM0
 ; --- Flash_PollStatus ---
 ; Polls the status byte at [hl] (a window address currently sourced
 ; from flash) until bit 7 (ready) is set, or FLASH_TIMEOUT_ITERATIONS
-; is reached (CLAUDE.md: "Any flash status polling loop must have a
+; is reached (docs/project-rules.md: "Any flash status polling loop must have a
 ; software timeout. Never hang forever on an incomplete emulator
 ; implementation.").
 ; Output: carry clear if ready, carry set on timeout.

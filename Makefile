@@ -1,6 +1,6 @@
 # MBC6 test ROM build.
 #
-# See CLAUDE.md "Mandatory build workflow": after source/layout changes
+# See docs/project-rules.md "Mandatory build workflow": after source/layout changes
 # run `make` then `make verify`. `make test` is build + static
 # verification only — it does not prove runtime mapper correctness.
 
@@ -23,7 +23,7 @@ MAP        := $(BUILD_DIR)/mbc6-test.map
 SYM        := $(BUILD_DIR)/mbc6-test.sym
 
 # Destructive flash tests are compile-time disabled by default.
-# CLAUDE.md "Destructive flash policy": default must be OFF.
+# docs/project-rules.md "Destructive flash policy": default must be OFF.
 ENABLE_DESTRUCTIVE_FLASH_TESTS ?= 0
 
 GENERATED := $(SRC_DIR)/bank_data.asm $(SRC_DIR)/bank_data_fixed.asm $(SRC_DIR)/font_data.asm $(SRC_DIR)/build_info.asm

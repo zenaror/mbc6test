@@ -1,6 +1,6 @@
 ; Destructive flash tests: TD1-TD6.
 ;
-; CLAUDE.md "Destructive flash policy": compiled in only when built
+; docs/project-rules.md "Destructive flash policy": compiled in only when built
 ; with ENABLE_DESTRUCTIVE_FLASH_TESTS=1 (default is 0 — see Makefile).
 ; Never reachable from "run all safe tests"; main.asm only calls into
 ; this file's dispatcher from behind the destructive-mode confirmation
@@ -231,15 +231,15 @@ Test_TD4:
 
 ; --- Test_TD5 --- Sector-0 WP behavior (INFO).
 ; Tests the documented MBC6-level Flash Write Enable/WP register
-; ($1000 — CLAUDE.md: "protects sector 0 and the hidden region"), not
+; ($1000 — docs/project-rules.md: "protects sector 0 and the hidden region"), not
 ; any flash-chip-internal nonvolatile unprotect command (the iceboy
 ; doc's sequence for that is only loosely specified and described as
 ; not even enabled on real Net de Get carts, so issuing it here would
 ; risk an undocumented, possibly-nonvolatile side effect for no firm
-; expected result — CLAUDE.md: never turn an uncertain observation
+; expected result — docs/project-rules.md: never turn an uncertain observation
 ; into a normative PASS/FAIL). Programs bank 0 offset 0 with WP
 ; enabled, then again with WP disabled, and records both outcomes as
-; INFO — CLAUDE.md doesn't give us known-good original sector 0
+; INFO — docs/project-rules.md doesn't give us known-good original sector 0
 ; content to assert a specific expected byte against.
 ;
 ; Deliberately does NOT re-erase bank 0 first the way TD2 does for
@@ -288,7 +288,7 @@ Test_TD5:
 ; describes how to enter hidden-region *read* mode, but does not
 ; document an erase/program command sequence for that region.
 ; Guessing one would mean issuing an undocumented command against
-; nonvolatile storage — exactly what CLAUDE.md prohibits ("Never
+; nonvolatile storage — exactly what docs/project-rules.md prohibits ("Never
 ; convert an uncertain observation into a normative PASS/FAIL
 ; expectation"). SKIP is the honest result until an authoritative
 ; source documents this.

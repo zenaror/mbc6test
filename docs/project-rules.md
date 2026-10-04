@@ -1,4 +1,11 @@
-# CLAUDE.md
+# Project rules — MBC6 Test ROM
+
+This file holds the project's full technical rules. Until 2026-10-04 they
+lived in `CLAUDE.md`, which was removed at Rafael's request; the text below
+is unchanged except for this note, the spelled-out name of the iceboy
+reference, the repository-structure listing, and the shared-memory section
+at the end. `AGENTS.md` is the short working guide for
+agents and points here.
 
 ## Project mission
 
@@ -18,7 +25,7 @@ Before changing mapper or flash behavior, consult the relevant source:
 
 - Pan Docs — MBC6: https://gbdev.io/pandocs/MBC6.html
 - GBDev MBC6 research thread: https://gbdev.gg8.se/forums/viewtopic.php?id=544
-- iceboy / Michael Singer — NP GB Memory and Net de Get flash research: https://iceboy.a-singer.de/doc/np_gb_memory.html
+- iceboy / Michael Singer — Nintendo Power GB Memory (NP GB Memory) and Net de Get flash research: https://iceboy.a-singer.de/doc/np_gb_memory.html
 - ZoomTen `mbc30test`: https://github.com/ZoomTen/mbc30test
 - EricKirschenmann / HyperHacker `MBC3-Tester-gb`: https://github.com/EricKirschenmann/MBC3-Tester-gb
 
@@ -346,10 +353,11 @@ Prefer verifying the final linked/fixed ROM rather than trusting source macros.
 
 ```text
 .
-├── CLAUDE.md
+├── AGENTS.md
 ├── Makefile
 ├── README.md
 ├── docs/
+│   ├── project-rules.md
 │   ├── mbc6-notes.md
 │   ├── test-matrix.md
 │   └── result-format.md
@@ -428,6 +436,6 @@ Runtime results from the user or emulator developer are evidence to iterate on t
 
 ## Memória compartilhada OMM
 
-Consulte [OMM.md](OMM.md) e pesquise em `memory/` antes de repetir uma investigação. Ao guardar uma descoberta útil, registre sua origem, versão e evidência. Ao encerrar uma sessão, atualize o handoff do OMM com o estado e a próxima ação.
+Consulte [OMM.md](../OMM.md) e pesquise na OMM pelo MCP, no escopo `mbc6test`, antes de repetir uma investigação. Os dados da OMM ficam só no `ai-omm-backup`, nunca neste repositório. Ao guardar uma descoberta útil, registre sua origem, versão e evidência. Ao encerrar uma sessão, atualize o handoff da OMM com o estado e a próxima ação.
 
 As anotações do OMM não substituem a hierarquia de fontes deste arquivo. Uma observação de emulador ou uma hipótese experimental não vira requisito normativo sem evidência apropriada. A aprovação em `make verify` demonstra invariantes estáticos da ROM; não prova funcionamento do mapper em hardware.

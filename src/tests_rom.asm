@@ -1,8 +1,8 @@
 ; ROM banking tests: T00, T01, T10-T14.
 ; See docs/test-matrix.md for the authoritative description of each
-; test and CLAUDE.md "Required safe tests" / "ROM bank layout".
+; test and docs/project-rules.md "Required safe tests" / "ROM bank layout".
 ;
-; All routines here run from fixed ROM (CLAUDE.md "Fixed-ROM safety
+; All routines here run from fixed ROM (docs/project-rules.md "Fixed-ROM safety
 ; rule") since they change MBC6 ROM/Flash mapping registers.
 
 INCLUDE "hardware.inc"
@@ -28,7 +28,7 @@ SECTION "ROM Tests", ROM0
 ; --- CapturePowerOnState ---
 ; Snapshots the raw bytes at the two ROM windows' signature offsets
 ; into WRAM. Must be called before any MBC6 register write — see
-; CLAUDE.md "Power-on state": "Capture before UI initialization code
+; docs/project-rules.md "Power-on state": "Capture before UI initialization code
 ; has any opportunity to write MBC registers." Called directly from
 ; main.asm's Start, before the CGB capability probe.
 EXPORT CapturePowerOnState
@@ -55,7 +55,7 @@ CapturePowerOnState:
 ; --- Test_T00 ---
 ; Startup/header sanity. The build-time verifier (tools/verify_rom.py)
 ; is authoritative for header bytes; this is purely diagnostic, hence
-; INFO rather than PASS/FAIL (CLAUDE.md: "Unknown behavior must not
+; INFO rather than PASS/FAIL (docs/project-rules.md: "Unknown behavior must not
 ; influence the compatibility score" — and there is no runtime pass
 ; condition here, only a version display).
 EXPORT Test_T00
@@ -159,7 +159,7 @@ Test_T11:
     ret
 
 ; --- Test_T12 --- ROM Bank A/B independence across several pairs,
-; including edge and cross-pattern cases (CLAUDE.md T12 list).
+; including edge and cross-pattern cases (docs/project-rules.md T12 list).
 T12_Pairs:
     db 0, 127
     db 127, 0
@@ -245,7 +245,7 @@ T12_CheckPair:
 
 ; --- Test_T13 --- explicit physical ROM bank 0 mapping, both windows.
 ; Unlike MBC1/MBC3/MBC5-style mappers, bank 0 is a legal, distinct
-; selection in the switchable windows on MBC6 (CLAUDE.md "Bank 0 is
+; selection in the switchable windows on MBC6 (docs/project-rules.md "Bank 0 is
 ; valid in the switchable ROM windows").
 EXPORT Test_T13
 Test_T13:

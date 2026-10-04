@@ -3,7 +3,7 @@
 
 Run by `make verify`. Exits non-zero if any invariant is broken. This
 checks the final linked/fixed .gb file, not source macros — per
-CLAUDE.md "Host-side verification": "Prefer verifying the final
+docs/project-rules.md "Host-side verification": "Prefer verifying the final
 linked/fixed ROM rather than trusting source macros."
 """
 import sys

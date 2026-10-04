@@ -1,5 +1,5 @@
 ; MBC6 mapper register map and memory windows.
-; Source: CLAUDE.md "MBC6 memory model" (project-authoritative summary
+; Source: docs/project-rules.md "MBC6 memory model" (project-authoritative summary
 ; of Pan Docs MBC6 — https://gbdev.io/pandocs/MBC6.html).
 ;
 ; MBC6 ROM/Flash bank numbers are 8 KiB units. MBC6 SRAM bank numbers
@@ -63,7 +63,7 @@ DEF FLASH_STATUS_TIMEOUT_BIT EQU 4
 DEF FLASH_CMD_RESET EQU $F0
 
 ; Software timeout for status-polling loops (destructive tests only).
-; CLAUDE.md: "Any flash status polling loop must have a software
+; docs/project-rules.md: "Any flash status polling loop must have a software
 ; timeout." Not tuned against real hardware timing — chosen generously
 ; large so a working implementation always finishes well within it.
 DEF FLASH_TIMEOUT_ITERATIONS EQU 60000

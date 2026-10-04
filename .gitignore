@@ -14,5 +14,6 @@ __pycache__/
 /*.sav.flash
 /gbe.ini
 
-# Índice de busca OMM derivado; a memória canônica fica em memory/
+# Índice local da CLI omm, se alguém rodá-la nesta pasta por engano.
+# Os dados da OMM ficam só no ai-omm-backup; veja OMM.md.
 .omm/
