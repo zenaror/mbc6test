@@ -1,5 +1,5 @@
 ; Non-destructive flash tests: T30-T35.
-; See docs/test-matrix.md, CLAUDE.md "Flash rules", and
+; See docs/test-matrix.md, docs/project-rules.md "Flash rules", and
 ; src/flash.asm for the command sequences (sourced from the iceboy NP
 ; GB Memory documentation). None of these erase, program, protect, or
 ; unprotect anything — see src/tests_flash_destructive.asm for the
@@ -18,7 +18,7 @@ wSector0StatusByte:: db
 SECTION "Flash Tests", ROM0
 
 ; --- Test_T30 --- ROM/Flash source selection isolation.
-; Never reads flash contents (CLAUDE.md: "Do not require any specific
+; Never reads flash contents (docs/project-rules.md: "Do not require any specific
 ; initial flash contents"). Instead, uses known ROM bank signatures as
 ; a witness: a window's ROM bank *number* register is only ever
 ; written once here, so if that window still shows the same ROM
@@ -96,7 +96,7 @@ Test_T31:
 ; --- Test_T32 --- Flash JEDEC ID through Bank B window.
 ; Same ID, reached through the other 8 KiB window — MBC6 exposes two
 ; independent flash windows and both must translate JEDEC addressing
-; correctly (CLAUDE.md T32).
+; correctly (docs/project-rules.md T32).
 EXPORT Test_T32
 Test_T32:
     call Flash_EnterIDMode
@@ -125,7 +125,7 @@ Test_T32:
 ; Confirms ID mode entry (same check as T31), resets, then confirms
 ; the manufacturer/device byte pair no longer reads back — i.e. we
 ; left ID mode. This is a differential check, not a check against
-; known array content (CLAUDE.md: never assume flash array contents),
+; known array content (docs/project-rules.md: never assume flash array contents),
 ; so it carries a small theoretical false-positive risk if the real
 ; array happens to contain the exact ID byte pair at that offset;
 ; that risk is inherent to testing this non-destructively.
@@ -169,7 +169,7 @@ Test_T33:
     ret
 
 ; --- Test_T34 --- Hidden 256-byte region read mode (INFO).
-; CLAUDE.md: "Do not require any particular hidden-region payload."
+; docs/project-rules.md: "Do not require any particular hidden-region payload."
 ; Reads 256 bytes through window A and reports an XOR checksum as
 ; INFO — a diagnostic fingerprint, not a normative expectation.
 EXPORT Test_T34
@@ -197,7 +197,7 @@ Test_T34:
 ; when read from idle flash outside such an operation. Rather than
 ; issue any protect/unprotect command (destructive-adjacent and out of
 ; scope for the safe suite), this records the as-observed byte at the
-; window with no operation in progress, purely as INFO — CLAUDE.md:
+; window with no operation in progress, purely as INFO — docs/project-rules.md:
 ; "Do not modify persistent protection state in the default suite."
 EXPORT Test_T35
 Test_T35:

@@ -1,12 +1,12 @@
 ; Test result model and test IDs.
-; See CLAUDE.md "Test statuses" / "Required safe tests" and
+; See docs/project-rules.md "Test statuses" / "Required safe tests" and
 ; docs/test-matrix.md for the authoritative description of each test.
 
 DEF RESULT_PASS EQU 0
 DEF RESULT_FAIL EQU 1
 DEF RESULT_SKIP EQU 2
 DEF RESULT_INFO EQU 3
-; Not one of CLAUDE.md's four semantic result classes — internal-only
+; Not one of docs/project-rules.md's four semantic result classes — internal-only
 ; sentinel so the on-screen results grid can tell "never ran this
 ; build" (e.g. TD1-TD6 in a safe build) apart from an actual PASS,
 ; which is numerically 0. ResetTestState initializes every slot to

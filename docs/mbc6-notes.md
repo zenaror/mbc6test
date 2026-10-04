@@ -7,7 +7,7 @@ test row.
 
 ## BGB was not available to test against during initial development
 
-This project's stated motivation (`CLAUDE.md`, `README.md`) is
+This project's stated motivation (`docs/project-rules.md`, `README.md`) is
 interoperability testing requested by the BGB developer — but BGB is
 understood to not currently have (or not yet have complete) MBC6
 support, which is exactly why a conformance ROM like this is useful to
@@ -65,7 +65,7 @@ manufacturer/device ID after the documented autoselect entry sequence)
 FAIL on both.
 
 This was root-caused by reading each emulator's own MBC6 source, not
-by guesswork (CLAUDE.md: never infer hardware truth from an emulator,
+by guesswork (docs/project-rules.md: never infer hardware truth from an emulator,
 but reading an emulator's source to debug *this ROM's* code, without
 changing the ROM's documented-behavior expectations, is a legitimate
 debugging step):
@@ -220,7 +220,7 @@ runs of the same filename.
 This is a real bug in GBE+, not a documented hardware quirk (neither
 dandocs nor either dumper tool describes anything like it), so
 `Test_TD1` is not adapted to route around it — doing so would encode
-an emulator bug as expected behavior, exactly what CLAUDE.md's
+an emulator bug as expected behavior, exactly what docs/project-rules.md's
 sourcing rules exist to prevent. TD1-TD3 reporting FAIL against this
 specific GBE+ build is the correct, informative outcome.
 
@@ -237,7 +237,7 @@ write $2800, 8   ; source A = flash
 write $3800, 8   ; source B = flash
 ```
 
-This ROM previously only ever wrote `$0C00` — CLAUDE.md documents
+This ROM previously only ever wrote `$0C00` — docs/project-rules.md documents
 `$1000` as sector-0/hidden-region write protection, which doesn't on
 its face suggest it gates `$0C00` at all. Whether `$0C00` alone would
 have worked isn't known from any source consulted; rather than guess,
@@ -267,7 +267,7 @@ at gbhwdb.gekkio.fi (`cartridges/CGB-BMVJ-0/gekkio-1.html` and
 than a software reverse-engineer's notes:
 
 - **Flash chip**: exact part number `MX29F008TC-14`, manufacturer
-  Macronix — matches `CLAUDE.md`'s stated part number precisely, now
+  Macronix — matches `docs/project-rules.md`'s stated part number precisely, now
   with visible chip markings from two physical units
   (`E991012 29F008TC-14 21534 TAIWAN` and
   `E991112 29F008TC-14 21726 TAIWAN`), not just a document reference.

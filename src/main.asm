@@ -5,7 +5,7 @@
 ; enforce that lock, so we perform our own runtime capability check
 ; before any MBC6 register is touched.
 ;
-; Per CLAUDE.md / the project brief: do not gate on the CPU register A
+; Per docs/project-rules.md / the project brief: do not gate on the CPU register A
 ; boot hand-off value alone, since that is unreliable when an emulator
 ; skips the boot ROM. Instead probe a CGB-only hardware capability
 ; (WRAM banking via rSVBK) and use that as the actual PASS/FAIL gate;
@@ -26,7 +26,7 @@ Start:
     ld [wBootRegA], a
 
     ; T01: capture the switchable ROM windows before writing any MBC6
-    ; register (CLAUDE.md "Power-on state"). Must happen before
+    ; register (docs/project-rules.md "Power-on state"). Must happen before
     ; anything below that could touch a mapper register.
     call CapturePowerOnState
 
@@ -62,13 +62,13 @@ Start:
     call Test_T34
     call Test_T35
     ; Experimental/observational only — never affect the compatibility
-    ; score (CLAUDE.md "Undefined / experimental behavior").
+    ; score (docs/project-rules.md "Undefined / experimental behavior").
     call Test_EX01
     call Test_EX02
 
 IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS
     ; Never reachable in a default build (Makefile defaults this to 0)
-    ; — CLAUDE.md "Destructive flash policy". Requires deliberate
+    ; — docs/project-rules.md "Destructive flash policy". Requires deliberate
     ; multi-button confirmation before the first destructive operation.
     call UI_ConfirmDestructive
     jr c, .skipDestructive

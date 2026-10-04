@@ -1,6 +1,6 @@
 # Test matrix
 
-Authoritative source precedence follows `CLAUDE.md`: current Pan Docs
+Authoritative source precedence follows `docs/project-rules.md`: current Pan Docs
 first, then the iceboy flash documentation, then the GBDev MBC6
 research thread, then the MBC3/MBC30 test ROMs (design inspiration
 only). "Implementation status" reflects this repository's source, not
@@ -9,18 +9,18 @@ any particular emulator's behavior.
 | ID | Name | Class | Behavior tested | Authoritative source | Expected result | Status |
 |----|------|-------|------------------|----------------------|------------------|--------|
 | T00 | Startup/header sanity | Safe | Displays ROM/test-suite version; no runtime expectation | N/A (build-time verifier is authoritative for header bytes) | INFO always | Implemented |
-| T01 | Power-on mapper state capture | Safe | Switchable ROM windows resolve to physical banks 2 (A) / 3 (B) before any MBC6 register write | iceboy MBC6 power-on pseudocode; CLAUDE.md "Power-on state" | PASS if windows show banks 2/3 pre-write | Implemented |
-| T10 | ROM Bank A full sweep | Safe | Bank A shows the correct physical 8 KiB bank for all values $00-$7F | Pan Docs MBC6; CLAUDE.md "ROM bank layout" | PASS all 128 banks match | Implemented |
+| T01 | Power-on mapper state capture | Safe | Switchable ROM windows resolve to physical banks 2 (A) / 3 (B) before any MBC6 register write | iceboy MBC6 power-on pseudocode; docs/project-rules.md "Power-on state" | PASS if windows show banks 2/3 pre-write | Implemented |
+| T10 | ROM Bank A full sweep | Safe | Bank A shows the correct physical 8 KiB bank for all values $00-$7F | Pan Docs MBC6; docs/project-rules.md "ROM bank layout" | PASS all 128 banks match | Implemented |
 | T11 | ROM Bank B full sweep | Safe | Same as T10, through window B | Pan Docs MBC6 | PASS all 128 banks match | Implemented |
-| T12 | ROM Bank A/B independence | Safe | Changing one window's bank does not affect the other, across 6 pairs incl. edge/cross cases | CLAUDE.md T12 pair list | PASS | Implemented |
+| T12 | ROM Bank A/B independence | Safe | Changing one window's bank does not affect the other, across 6 pairs incl. edge/cross cases | docs/project-rules.md T12 pair list | PASS | Implemented |
 | T13 | ROM bank 0 mapping | Safe | Physical bank 0 is a legal, distinct selection in both switchable windows | Pan Docs MBC6 ("Bank 0 is valid in the switchable ROM windows") | PASS | Implemented |
 | T14 | ROM window boundaries | Safe | Windows resolve to commanded banks at extremes ($7F/$00 and swapped); fixed ROM (banks 0/1) unaffected by window changes | Pan Docs MBC6 memory map | PASS | Implemented |
 | T20 | SRAM disabled behavior | Safe | A write issued while SRAM is disabled does not persist | Pan Docs (general MBC RAM-enable semantics) | PASS | Implemented |
-| T21 | SRAM Bank A sweep | Safe | Banks 0-7 hold distinct, persistent data at 2 offsets each through window A | Pan Docs MBC6; CLAUDE.md "SRAM testing" | PASS | Implemented |
+| T21 | SRAM Bank A sweep | Safe | Banks 0-7 hold distinct, persistent data at 2 offsets each through window A | Pan Docs MBC6; docs/project-rules.md "SRAM testing" | PASS | Implemented |
 | T22 | SRAM Bank B sweep | Safe | Same as T21, through window B | Pan Docs MBC6 | PASS | Implemented |
-| T23 | SRAM A/B independence | Safe | Changing one SRAM window's bank does not affect the other | Pan Docs MBC6; CLAUDE.md | PASS | Implemented |
-| T24 | SRAM 4 KiB granularity | Safe | Adjacent bank pairs (0/1, 3/4, 6/7) are independently addressable, not 8 KiB-aliased | CLAUDE.md "MBC6 SRAM bank numbers are 4 KiB units" | PASS | Implemented |
-| T30 | ROM/Flash source selection isolation | Safe | Toggling one window's ROM/Flash source does not disturb the other window's source or bank number | CLAUDE.md "independent ROM-vs-flash source selection" | PASS | Implemented |
+| T23 | SRAM A/B independence | Safe | Changing one SRAM window's bank does not affect the other | Pan Docs MBC6; docs/project-rules.md | PASS | Implemented |
+| T24 | SRAM 4 KiB granularity | Safe | Adjacent bank pairs (0/1, 3/4, 6/7) are independently addressable, not 8 KiB-aliased | docs/project-rules.md "MBC6 SRAM bank numbers are 4 KiB units" | PASS | Implemented |
+| T30 | ROM/Flash source selection isolation | Safe | Toggling one window's ROM/Flash source does not disturb the other window's source or bank number | docs/project-rules.md "independent ROM-vs-flash source selection" | PASS | Implemented |
 | T31 | Flash JEDEC ID through Bank A | Safe | Autoselect sequence + read returns manufacturer $C2 / device $81 | iceboy NP GB Memory doc | PASS | Implemented — FAILs on GBE+ and mGBA (see `docs/mbc6-notes.md`; both emulators leave flash ID readback unimplemented) |
 | T32 | Flash JEDEC ID through Bank B | Safe | Same as T31, through window B | iceboy NP GB Memory doc | PASS | Implemented — same emulator-gap caveat as T31 |
 | T33 | Flash reset command | Safe | `$F0` exits ID mode; a differential check (ID bytes no longer read back) | iceboy NP GB Memory doc | PASS | Implemented — same emulator-gap caveat |
@@ -39,7 +39,7 @@ any particular emulator's behavior.
 
 - "Implemented, disabled by default" means the code exists in
   `src/tests_flash_destructive.asm` but is compiled out unless built
-  with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` (see `CLAUDE.md` "Destructive
+  with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` (see `docs/project-rules.md` "Destructive
   flash policy") — the default build cannot reach any of TD1-TD6.
 - T31-T33's emulator-observed FAILs are a documented, expected
   consequence of incomplete MBC6 flash emulation in the two engines

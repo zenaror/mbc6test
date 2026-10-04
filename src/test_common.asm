@@ -1,11 +1,11 @@
 ; Shared test-framework primitives: bank signature verification,
 ; result recording, and first-failure capture.
 ;
-; This is not part of the CLAUDE.md-suggested file list, but factoring
+; This is not in the file list suggested by docs/project-rules.md, but factoring
 ; it out keeps the actual test bodies (tests_rom.asm etc.) short and
 ; auditable instead of duplicating this bookkeeping in every test.
 ; Everything here runs from fixed ROM, since callers use it while
-; MBC6 registers are being changed (CLAUDE.md "Fixed-ROM safety rule"
+; MBC6 registers are being changed (docs/project-rules.md "Fixed-ROM safety rule"
 ; — "Keep core mapper helpers, ... assertions, ... in fixed ROM").
 
 INCLUDE "hardware.inc"
@@ -31,7 +31,7 @@ wLastCheckAddrLo::   db
 wLastCheckExpected:: db
 wLastCheckActual::   db
 
-; Permanent first-failure record (CLAUDE.md: "Prefer a precise
+; Permanent first-failure record (docs/project-rules.md: "Prefer a precise
 ; first-failure report over a generic 'MBC6 FAIL'"). Only the first
 ; FAIL across the whole run populates this.
 wFailureRecorded:: db
@@ -269,7 +269,7 @@ CheckByteAt:
 ; Writes the 20-byte machine-readable result block described in
 ; docs/result-format.md to SRAM bank 7 / window B, offset $F00. Call
 ; once, after the full safe test batch (through EX01/EX02) has
-; finished — CLAUDE.md: "Do not use the result block in a way that
+; finished — docs/project-rules.md: "Do not use the result block in a way that
 ; invalidates the SRAM banking tests."
 EXPORT WriteResultBlock
 WriteResultBlock:
