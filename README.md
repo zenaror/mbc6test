@@ -83,7 +83,12 @@ To build with destructive flash tests compiled in:
 
 ```sh
 make ENABLE_DESTRUCTIVE_FLASH_TESTS=1
+make verify ENABLE_DESTRUCTIVE_FLASH_TESTS=1
 ```
+
+Pass the same flag to `make verify`. The Makefile rebuilds whenever the
+flag changes, so a plain `make verify` after a destructive build
+rebuilds and checks the default ROM instead.
 
 `make verify` only checks static invariants — exact 1 MiB size, header
 bytes, checksums, and all 128 physical 8 KiB bank signatures. It does
@@ -103,9 +108,10 @@ and shows it on every screen — see "Identifying a build" below.
 
 Releases are published from GitHub (this repo's history is also
 mirrored to a private Gitea instance for backup, but that's not where
-releases are cut). `.github/workflows/release.yml` is meant to build
-and `make verify` both the default (non-destructive) configuration and
-the `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` one, and to publish both
+releases are cut). `.github/workflows/release.yml` builds and runs
+`make verify` on both the default (non-destructive) configuration and
+the `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` one, checks that only the
+destructive ROM contains the TD1-TD6 code, and publishes both
 (`mbc6-test.gbc` and the clearly labeled `mbc6-test-DESTRUCTIVE.gbc`)
 on a GitHub release tagged with the short commit hash — the same one
 the ROM itself shows on screen. It's manually triggered only
@@ -113,13 +119,10 @@ the ROM itself shows on screen. It's manually triggered only
 create a release on their own. Run it from the repo's Actions tab on
 GitHub when you actually want to cut one.
 
-**Known issue (found 2026-10-04):** the workflow's destructive step
-runs `make verify` without the flag, and the Makefile then rebuilds
-the default configuration. The uploaded `mbc6-test-DESTRUCTIVE.gbc`
-is therefore the safe ROM, and the destructive build is never
-verified. The only release so far, the draft `3298a73`, has this
-problem. Until the step uses `make verify
-ENABLE_DESTRUCTIVE_FLASH_TESTS=1`, build the destructive ROM locally.
+Until 2026-10-04 the destructive step ran `make verify` without the
+flag, which rebuilt the default configuration, so the only release
+built that way (the draft `3298a73`, since deleted) shipped the safe
+ROM as `mbc6-test-DESTRUCTIVE.gbc`.
 
 ## Running
 

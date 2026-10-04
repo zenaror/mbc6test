@@ -55,6 +55,12 @@ jobs:
 
       - name: Stage default build
         run: |
+          # The default build must contain no flash erase/program code
+          # path (docs/project-rules.md, "Required safe tests").
+          if grep -qE 'Test_TD|Flash_EraseSector|Flash_ProgramBuffer|UI_ConfirmDestructive' build/mbc6-test.sym; then
+            echo "::error::default build contains destructive flash code"
+            exit 1
+          fi
           mkdir -p dist
           cp build/mbc6-test.gbc dist/mbc6-test.gbc
           cp build/mbc6-test.map dist/mbc6-test.map
@@ -63,10 +69,17 @@ jobs:
       - name: Build + verify destructive-tests configuration
         run: |
           make ENABLE_DESTRUCTIVE_FLASH_TESTS=1
-          make verify
+          # Pass the flag to verify too: without it, the Makefile's flag
+          # stamp rebuilds the default configuration before verifying,
+          # and the safe ROM would then be staged as DESTRUCTIVE.
+          make verify ENABLE_DESTRUCTIVE_FLASH_TESTS=1
 
       - name: Stage destructive build
         run: |
+          if ! grep -q 'Test_TD1' build/mbc6-test.sym || cmp -s build/mbc6-test.gbc dist/mbc6-test.gbc; then
+            echo "::error::build/ does not hold the destructive build (no TD1, or identical to the default ROM)"
+            exit 1
+          fi
           cp build/mbc6-test.gbc dist/mbc6-test-DESTRUCTIVE.gbc
           cp build/mbc6-test.map dist/mbc6-test-DESTRUCTIVE.map
           cp build/mbc6-test.sym dist/mbc6-test-DESTRUCTIVE.sym
