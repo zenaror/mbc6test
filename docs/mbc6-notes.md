@@ -77,10 +77,28 @@ debugging step):
   ID-mode reads silently fall through to ordinary array reads.
 - **mGBA** (`src/gb/mbc/mbc.c`, local build in
   `MobileAdapterGB/mgba`): `_GBMBC6()` logs `"MBC6 unimplemented flash
-  OE write"` / `"...flash WE write"` (`mLOG(..., STUB, ...)`) for the
-  $2800/$3800 and $1000 register ranges and has no case at all for
-  writes to $4000-$7FFF when sourced from flash; `_GBMBC6Read()` has no
-  flash-array or ID-mode handling either.
+  OE write"` for the $0C00 (Flash Enable) range and `"...flash WE
+  write"` for $1000 (`mLOG(..., STUB, ...)`). Source select
+  ($2800/$3800) *is* implemented (`_GBMBC6MapChip`, bit 3 of the
+  value), and a flash-sourced window reads the last 1 MiB of the save
+  buffer (`GBMBCSwitchHalfBank` in `src/gb/mbc.c`), so flash *reads*
+  work. But writes to $4000-$7FFF fall through to the `"MBC6 unknown
+  address"` stub, so no flash command (ID, erase, program, reset) is
+  ever interpreted, and reads keep returning the array contents —
+  `$FF` on a fresh save, since new save space is filled with `$FF`
+  (`src/gb/gb.c`). *(Corrected 2026-10-04: an earlier version of this
+  note attributed the OE stub to $2800/$3800 and said flash reads were
+  not handled.)*
+
+Versions involved (identified 2026-10-04): the GBE+ runs used the
+official **GBE+ 1.10** Windows release (tag `1.10`, commit
+`f4c6e1f26407`; same SHA-256 as the release's `gbe_plus.exe`), while
+the source read during development was GBE+ **master** at
+`33346a290d42` (2026-06-10, "fix MBC6 bank erasing") — line numbers
+quoted at the time match master, not 1.10. The mGBA build reported
+itself as `0.11-9175-717fb3fd0-dirty`; its committed MBC6 code is
+unchanged up to the local HEAD checked on 2026-10-04, but the
+uncommitted ("-dirty") changes of that build are unknown.
 
 ## Results are shown on-screen, not just inferred from a summary count
 
@@ -101,6 +119,9 @@ reports `P:14 F:05 S:01 I:06` on mGBA — TD1 (erase) and TD4 (status/
 timeout) PASS, TD2 (buffered program) and TD3 (1->0 semantics) FAIL,
 consistent with the same incomplete flash command emulation noted
 above; TD5 is INFO and TD6 is SKIP by design (see `docs/test-matrix.md`).
+TD1's PASS on mGBA does **not** show that erase works there: mGBA
+ignores every flash write, and a fresh save already reads `$FF`, so
+TD1 passes without any erase taking place.
 
 One bug worth recording: `wPrevJoypad` (used to edge-detect the A
 press that advances a page) was originally seeded to 0 on entry to
@@ -112,23 +133,23 @@ from a real `ReadJoypad` call instead. Caught by testing the actual
 button-hold-through-transition sequence in mGBA via a scripted input
 sequence, not by inspection.
 
-Neither emulator implements the flash command interface beyond basic
-ROM/SRAM bank switching. The command sequence this ROM sends is the
-one documented in the iceboy NP GB Memory reference (see
-`src/flash.asm`); the expected `$C2`/`$81` result is normative per that
+Neither emulator returns the JEDEC ID: GBE+ ignores ID mode on reads,
+and mGBA does not interpret flash commands at all. The command sequence
+this ROM sends is the one documented in iceboy's Nintendo Power GB
+Memory (NP GB Memory) reference (see `src/flash.asm` and "About the
+iceboy source" below); the expected `$C2`/`$81` result is normative per that
 source, so T31-T33 correctly report FAIL rather than being weakened to
 match either emulator's current behavior — that would defeat the
 purpose of a conformance suite. This is exactly the kind of gap
 report this project exists to produce; it is not evidence of a bug in
 this ROM.
 
-## Three more MBC6 flash sources, and two real bugs they caught
+## More MBC6 flash sources, and the changes they prompted
 
-The user pointed at three more sources partway through development.
-Two turned out to be irrelevant to MBC6 (`sanni/cartreader`'s GB
-support covers it, see below, but `wodowiesel/GB-Dumper` doesn't
-mention MBC6 at all — MBC1/2/5 pinouts only). The other two were
-significant:
+Rafael pointed at four more sources partway through development:
+dandocs, FlashGBX, `wodowiesel/GB-Dumper` and `sanni/cartreader`.
+GB-Dumper turned out to be irrelevant to MBC6 (MBC1/2/5 pinouts only).
+The other three were significant:
 
 - **Dan/shonumi's dandocs** (<https://shonumi.github.io/dandocs.html>,
   "Net de Get: Mini Game @ 100" → "MBC6 Flash Operation"). Written by
@@ -145,21 +166,27 @@ significant:
   every detail, which carries real weight — this isn't one source's
   guess, it's two independent tools converging on the same bytes.
 
-### Two real bugs in this ROM's flash.asm, found and fixed
+### Two changes to this ROM's flash.asm (the first one is now in question)
 
-1. **`Flash_Reset` wrote `$F0` twice per window.** The iceboy doc
-   suggests a second reset "if the chip is in an unknown state," and
-   an earlier version of this ROM took that literally — write `$F0`,
-   then write it again to the same address. Traced against GBE+'s
-   source (`src/dmg/mbc6.cpp`): a `$F0` write only *terminates* a
-   pending status (`flash_stat & 0x81`) — once the first `$F0` already
-   cleared that, a *second* `$F0` to the same address instead falls
-   through to the ordinary array-write path and gets stored as data,
-   corrupting the byte it just erased/programmed. Confirmed by
-   reproducing it: TD1 read back `$F0` instead of `$FF` at the exact
-   offset the (second) reset had been written to. Neither FlashGBX nor
-   cartreader ever issue a repeated `$F0` to the same address — each
-   sends it exactly once. Fixed the same way here.
+1. **`Flash_Reset` wrote `$F0` twice per window; it now writes it once
+   per window.** The earlier version followed iceboy's Net de Get
+   `reset_flash()` procedure, which writes `$F0` twice in direct
+   succession to the same address ($4000) on purpose — two resets to
+   the same address leave the write-buffer loading mode without
+   starting a program operation — and a third time after 100 ms.
+   The change was made after tracing GBE+'s source
+   (`src/dmg/mbc6.cpp`): a `$F0` write only *terminates* a pending
+   status (`flash_stat & 0x81`); once the first `$F0` has cleared it,
+   a *second* `$F0` falls through to the ordinary array-write path and
+   is stored as data. Reproduced in GBE+: TD1 read back `$F0` instead
+   of `$FF` at the offset the second reset had been written to. Per the
+   development notes, neither FlashGBX nor cartreader sends a repeated
+   `$F0` to the same address (not re-checked on 2026-10-04).
+   *Correction (2026-10-04):* storing a reset as data is GBE+
+   behavior, not documented hardware behavior, and iceboy — which
+   ranks above the dumper tools in this project's source order —
+   documents the double reset deliberately. Whether to restore
+   iceboy's sequence is an open decision; the code is unchanged.
 2. **The buffered-write "commit" byte repeated the real data value
    instead of writing literal `$00`.** An earlier version's commit
    step was `ld a,[hl] / ld [hl],a` — re-write whatever value was
@@ -173,37 +200,46 @@ significant:
    GBE+'s finish-signal check (`value == 0`) needs exactly that
    literal value to fire.
 
-Neither fix changed GBE+'s TD1-TD3 results, because GBE+ has a third,
-separate bug unrelated to either of the above (see next section) — but
-both fixes are still correct per two independently-converging
-real-hardware sources, and are worth keeping regardless of what any
-one emulator currently does with them.
+Neither change made TD1-TD3 pass in GBE+; the next section explains
+why. The commit-byte change (item 2) stands on two
+independently-converging real-hardware sources.
 
-### A third bug — this one in GBE+, not this ROM
+### Why TD1-TD3 still fail in GBE+ (corrected 2026-10-04)
 
-TD1 (sector erase) still reads back the wrong byte in GBE+ after both
-fixes above. Traced to `src/dmg/mbc6.cpp`'s flash-command write
-handler:
+After both changes, TD1 in GBE+ still showed `TEST ID $14`, bank `$70`,
+address `$4000`, expected `$FF`, actual `$F0`. During development this
+was blamed on a bank-selection bug, but checking GBE+ 1.10's code (the
+binary actually run) shows a different cause:
+
+- GBE+ stores *any* write to $4000-$7FFF that is neither a command nor
+  the end of a pending operation as data in `flash[flash_io_bank]`, in
+  either window, without even checking whether that window is sourced
+  from flash. `Flash_Reset` writes `$F0` to $4000 and then to $6000:
+  the first ends the pending erase status, the second is stored as
+  data at offset 0 of the erased bank — exactly the `$F0` seen at
+  `$4000`.
+- In GBE+ 1.10, sector erase also fills the bank with `$00` instead of
+  `$FF` (fixed upstream in `33346a290d42`, 2026-06-10, after 1.10), so
+  the other checked offsets would read `$00` too (inferred from the
+  code; the ROM reports only the first failure).
+- TD2/TD3 probably fail through the same stored-as-data path,
+  overwriting the first programmed byte (inference, not verified).
+
+The bank-selection bug itself is real — the flash-command handler
+computes window A's bank from `bank_bits` (the *SRAM*-banking
+variable, `$0400`/`$0800`) instead of `rom_bank`:
 
 ```c
 u8 bank_0 = (bank_bits & 0x7F);        // used for window A (address < 0x6000)
 u8 bank_1 = ((rom_bank >> 8) & 0x7F);  // used for window B
 ```
 
-`bank_1` (window B) correctly reads `rom_bank`, the variable that
-`$2000`/`$3000` writes actually update. `bank_0` (window A) reads
-`bank_bits` instead — the *SRAM*-banking variable (`$0400`/`$0800`),
-never touched by this ROM before flash tests run. Compare the
-non-flash ROM-read path in the same file, which correctly uses
-`bank_0 = (rom_bank & 0x7F)`. Since `bank_bits` stays at its
-zero-initialized default, every flash command issued through window A
-in GBE+ silently targets physical flash bank 0 regardless of what's
-written to `$2000` — confirmed by tracing `flash_io_bank`'s value
-through `case 0x30` and the read path, both of which only branch on
-this same miscomputed `bank_0`.
+so every flash command through window A targets physical flash bank 0
+(the "remembered" `flash_io_bank`). But flash reads go through the
+same `flash_io_bank`, so that bug alone does not produce TD1's
+mismatch.
 
-**Ruled out a second possible explanation before settling on the
-above**: GBE+ persists flash contents to a `<romname>.sav.flash` file
+**Ruled out another possible explanation**: GBE+ persists flash contents to a `<romname>.sav.flash` file
 next to the ROM, separate from the regular `.sav` (SRAM). Since this
 ROM's `build/mbc6-test.gbc` was repeatedly rebuilt and copied to the
 same path in `emulador/` throughout this investigation, a stale
@@ -211,18 +247,17 @@ same path in `emulador/` throughout this investigation, a stale
 contaminated a later one (emulators typically key save files off the
 ROM's filename, not its contents/hash). Re-ran TD1 against a
 never-before-used filename with no pre-existing `.sav`/`.sav.flash` —
-identical result (`TD1:F TD2:F TD3:F TD4:P`). This confirms the
-`bank_bits` mixup above as the actual cause, not leftover state from a
-previous run; still worth knowing about `.sav.flash` when re-testing
-this ROM in GBE+, since it silently persists across otherwise-fresh
-runs of the same filename.
+identical result (`TD1:F TD2:F TD3:F TD4:P`), so leftover state from a
+previous run was not the cause. It is still worth knowing about
+`.sav.flash` when re-testing this ROM in GBE+, since it silently
+persists across otherwise-fresh runs of the same filename.
 
-This is a real bug in GBE+, not a documented hardware quirk (neither
-dandocs nor either dumper tool describes anything like it), so
-`Test_TD1` is not adapted to route around it — doing so would encode
-an emulator bug as expected behavior, exactly what docs/project-rules.md's
-sourcing rules exist to prevent. TD1-TD3 reporting FAIL against this
-specific GBE+ build is the correct, informative outcome.
+None of these behaviors is documented hardware behavior (neither
+iceboy, dandocs nor either dumper tool describes anything like them),
+so `Test_TD1` is not adapted to route around them — doing so would
+encode emulator bugs as expected behavior, exactly what
+docs/project-rules.md's sourcing rules exist to prevent. TD1-TD3
+reporting FAIL against GBE+ 1.10 is the correct, informative outcome.
 
 ### The `$1000` → `$0C00` → `$1000` enable sequence is real, not guesswork
 
@@ -286,3 +321,26 @@ behavior) or is purely a passive power-supervision component wired
 independently. Recorded as INFO for anyone investigating further, not
 acted on in this ROM — no source describes a testable software-visible
 effect from it.
+
+## About the iceboy source ("NP GB Memory")
+
+The primary flash reference
+(<https://iceboy.a-singer.de/doc/np_gb_memory.html>, Michael Singer)
+is titled "Nintendo Power Game Boy Memory cartridge documentation".
+"NP GB Memory" is the white Nintendo Power Game Boy Memory flash
+cartridge sold in Japan — a different cartridge from Net de Get. The
+author notes that Nintendo Power cartridges use a 29F008ATC (device ID
+`$89`) and Net de Get a 29F008TC (device ID `$81`), found no other
+difference between the two flash chips (same erase sector size, same
+256-byte hidden region), and states that the flash part of the page
+also applies to Net de Get. The page has its own section of
+pseudocode procedures for Net de Get (MBC6) cartridges.
+
+The datasheet linked from that page is for the AMD Am29F400B, cited by
+the author only as "a flash that has a command set that looks
+similar". It shares the generic command codes this ROM uses (`$F0`
+reset, `$AA`/`$55` unlock, `$90` autoselect, `$80`…`$30` sector erase,
+`$A0` program), but differs in unlock addresses, single-byte
+programming (no 128-byte buffer), status bits (DQ7/DQ6/DQ5) and has no
+hidden region, so it cannot validate anything MBC6-specific and is not
+an authority for this project (checked 2026-10-04).

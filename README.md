@@ -103,13 +103,23 @@ and shows it on every screen — see "Identifying a build" below.
 
 Releases are published from GitHub (this repo's history is also
 mirrored to a private Gitea instance for backup, but that's not where
-releases are cut). `.github/workflows/release.yml` builds the default
-(non-destructive) configuration, runs `make verify`, and publishes a
-GitHub release tagged with the short commit hash — the same one the
-ROM itself shows on screen. It's manually triggered only
+releases are cut). `.github/workflows/release.yml` is meant to build
+and `make verify` both the default (non-destructive) configuration and
+the `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` one, and to publish both
+(`mbc6-test.gbc` and the clearly labeled `mbc6-test-DESTRUCTIVE.gbc`)
+on a GitHub release tagged with the short commit hash — the same one
+the ROM itself shows on screen. It's manually triggered only
 (`workflow_dispatch`, no push/PR trigger), so ordinary commits never
 create a release on their own. Run it from the repo's Actions tab on
 GitHub when you actually want to cut one.
+
+**Known issue (found 2026-10-04):** the workflow's destructive step
+runs `make verify` without the flag, and the Makefile then rebuilds
+the default configuration. The uploaded `mbc6-test-DESTRUCTIVE.gbc`
+is therefore the safe ROM, and the destructive build is never
+verified. The only release so far, the draft `3298a73`, has this
+problem. Until the step uses `make verify
+ENABLE_DESTRUCTIVE_FLASH_TESTS=1`, build the destructive ROM locally.
 
 ## Running
 
@@ -186,15 +196,19 @@ See `docs/project-rules.md` for the full reference list and precedence order.
 Primary sources, in precedence order:
 
 1. [Pan Docs — MBC6](https://gbdev.io/pandocs/MBC6.html)
-2. [iceboy — NP GB Memory flash documentation](https://iceboy.a-singer.de/doc/np_gb_memory.html)
+2. [iceboy — Nintendo Power GB Memory (NP GB Memory) flash documentation](https://iceboy.a-singer.de/doc/np_gb_memory.html)
+   — written for the Nintendo Power Game Boy Memory flash cartridge;
+   its author states the flash part also applies to Net de Get, whose
+   29F008TC differs from the Nintendo Power 29F008ATC only in device ID
+   (`$81` vs `$89`). See `docs/mbc6-notes.md`, "About the iceboy source".
 3. [GBDev MBC6 research thread](https://gbdev.gg8.se/forums/viewtopic.php?id=544)
 4. [ZoomTen — mbc30test](https://github.com/ZoomTen/mbc30test) and
    [HyperHacker — MBC3-Tester-gb](https://github.com/EricKirschenmann/MBC3-Tester-gb)
    (design inspiration only, never a source of MBC6 expected behavior)
 
 Also consulted for the flash command sequences specifically (see
-`docs/mbc6-notes.md` for what each contributed and the bugs they
-caught): [Dan/shonumi's dandocs](https://shonumi.github.io/dandocs.html)
+`docs/mbc6-notes.md` for what each contributed):
+[Dan/shonumi's dandocs](https://shonumi.github.io/dandocs.html)
 ("Net de Get" section), and two independent real-hardware cartridge
 tools whose MBC6 flash implementations agree with each other in every
 detail — [FlashGBX](https://github.com/lesserkuma/FlashGBX) and
