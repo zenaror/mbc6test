@@ -99,7 +99,7 @@ Test_T31:
 ; correctly (docs/project-rules.md T32).
 EXPORT Test_T32
 Test_T32:
-    call Flash_EnterIDMode
+    call Flash_EnterIDModeViaBankB
     ld a, FLASH_JEDEC_MANUFACTURER
     ld de, MBC6_ROM_WIN_B + 0
     ld c, 0
@@ -153,10 +153,13 @@ Test_T33:
     jr nz, .pass
     ; Still reads as the ID pair after reset: either reset didn't
     ; work, or (small chance) that's genuinely the array content.
-    ld a, FLASH_JEDEC_DEVICE
+    ; Expect a non-ID value here so CheckByteAt records the persistent
+    ; $81 as a T33 failure instead of treating equality as a pass.
+    xor a
     ld de, MBC6_ROM_WIN_A + 1
     ld c, 0
     call CheckByteAt
+    jr c, .fail
 .pass:
     ld a, T_33
     ld d, RESULT_PASS
