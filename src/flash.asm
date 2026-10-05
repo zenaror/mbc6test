@@ -47,31 +47,44 @@ Flash_SelectCommandWindows:
     ret
 
 ; --- Flash_Reset ---
-; Issues $F0 once to each ROM/Flash window's base address. Safe to
-; call regardless of which window(s) are currently sourced from flash
-; — a write into a window currently sourced from ROM has no effect, so
-; this doubles as a defensive "make sure we're not stuck in a special
-; mode" call.
-;
-; Writes the command exactly once per window, not twice. An earlier
-; version wrote it twice per window, following the iceboy
-; documentation's suggestion to "issue a second reset command... if
-; the chip is in an unknown state" — but traced against GBE+'s
-; implementation (src/dmg/mbc6.cpp), a $F0 write only terminates a
-; pending erase/program status when one is actually pending
-; (`flash_stat & 0x81`); once that's already been cleared (which the
-; first $F0 does), a second $F0 to the same address falls through to
-; the ordinary array-write path and corrupts that byte with $F0 —
-; confirmed by reproducing it (TD1 reported the erased $FF at $4000
-; read back as $F0 after the second reset write). A single $F0 is
-; sufficient to exit ID/hidden-map mode or terminate a status wait;
-; there is no known-good case here that needs a second one.
+; Follow the iceboy pseudocode specifically for Net de Get (MBC6):
+; enable flash, write $F0 twice to $4000, wait 100 ms, then write $F0
+; once more. The source explains that the first two writes exit a
+; pending write-buffer load without starting programming; the delayed
+; third write handles an erase/program operation that ignored the first
+; resets. This is cartridge research, not a Macronix manufacturer
+; datasheet. Do not alter this sequence to match an emulator's model.
 EXPORT Flash_Reset
 Flash_Reset:
+    call Flash_SelectCommandWindows
     ld a, FLASH_CMD_RESET
     ld [MBC6_ROM_WIN_A], a
     ld a, FLASH_CMD_RESET
-    ld [MBC6_ROM_WIN_B], a
+    ld [MBC6_ROM_WIN_A], a
+    call Flash_Wait100ms
+    ld a, FLASH_CMD_RESET
+    ld [MBC6_ROM_WIN_A], a
+    ret
+
+; Wait for 1640 DIV increments: 100.1 ms at the CGB normal-speed
+; divider rate (16384 Hz). This does not depend on LCD/VBlank state.
+Flash_Wait100ms:
+    push bc
+    push hl
+    ld hl, 1640
+    ldh a, [rDIV]
+    ld c, a
+.waitTick:
+    ldh a, [rDIV]
+    cp c
+    jr z, .waitTick
+    ld c, a
+    dec hl
+    ld a, h
+    or l
+    jr nz, .waitTick
+    pop hl
+    pop bc
     ret
 
 ; --- Flash_EnterIDMode ---
@@ -88,6 +101,28 @@ Flash_EnterIDMode:
     ld [FLASH_CMD_ADDR_B], a
     ld a, FLASH_CMD_AUTOSELECT
     ld [FLASH_CMD_ADDR_A], a
+    ret
+
+; --- Flash_EnterIDModeViaBankB ---
+; Issues the complete unlock/autoselect sequence through window B alone.
+; Bank B=2 maps CPU $7555 to flash address $5555; Bank B=1 maps
+; CPU $6AAA to flash address $2AAA. This checks that the flash command
+; decoder follows the selected flash bank independently of window A.
+EXPORT Flash_EnterIDModeViaBankB
+Flash_EnterIDModeViaBankB:
+    call Flash_SelectCommandWindows
+    ld a, 2
+    call MBC6_SetROMBankB
+    ld a, FLASH_CMD_UNLOCK1
+    ld [MBC6_ROM_WIN_B + $1555], a
+    ld a, 1
+    call MBC6_SetROMBankB
+    ld a, FLASH_CMD_UNLOCK2
+    ld [MBC6_ROM_WIN_B + $0AAA], a
+    ld a, 2
+    call MBC6_SetROMBankB
+    ld a, FLASH_CMD_AUTOSELECT
+    ld [MBC6_ROM_WIN_B + $1555], a
     ret
 
 ; --- Flash_EnterHiddenMode ---

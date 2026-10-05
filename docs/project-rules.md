@@ -24,6 +24,7 @@ The target platform is **CGB only**. Do not spend implementation effort on DMG, 
 Before changing mapper or flash behavior, consult the relevant source:
 
 - Pan Docs — MBC6: https://gbdev.io/pandocs/MBC6.html
+- Macronix — MX29F800C T/B datasheet (8-Mbit NOR; related part, not the exact MX29F008TC-14 used in Net de Get): https://www.macronix.com/Lists/Datasheet/Attachments/8539/MX29F800C%20T-B%2C%205V%2C%208Mb%2C%20v1.3.pdf
 - GBDev MBC6 research thread: https://gbdev.gg8.se/forums/viewtopic.php?id=544
 - iceboy / Michael Singer — Nintendo Power GB Memory (NP GB Memory) and Net de Get flash research: https://iceboy.a-singer.de/doc/np_gb_memory.html
 - ZoomTen `mbc30test`: https://github.com/ZoomTen/mbc30test
@@ -47,12 +48,13 @@ The Nintendo Game Boy Programming Manual v1.1 is an important historical first-p
 Source precedence:
 
 1. current Pan Docs for explicitly specified MBC6 and CGB behavior;
-2. iceboy documentation for detailed MX29F008TC/ATC flash behavior;
-3. GBDev MBC6 research observations for unresolved/experimental mapper behavior;
-4. Gekkio's technical reference and the Nintendo Game Boy Programming Manual v1.1 for general hardware/CGB behavior;
-5. current RGBDS documentation for assembler/linker/toolchain behavior;
-6. GB ASM Tutorial and `hardware.inc` for implementation conventions;
-7. the MBC3/MBC30 test ROMs only as test-ROM design inspiration.
+2. an official Macronix datasheet for the exact part, when available; the linked MX29F800C T/B datasheet is first-party but only a related 8-Mbit device and must not be treated as exact-part proof;
+3. iceboy documentation for detailed, cartridge-specific MX29F008TC/ATC observations and procedures;
+4. GBDev MBC6 research observations for unresolved/experimental mapper behavior;
+5. Gekkio's technical reference and the Nintendo Game Boy Programming Manual v1.1 for general hardware/CGB behavior;
+6. current RGBDS documentation for assembler/linker/toolchain behavior;
+7. GB ASM Tutorial and `hardware.inc` for implementation conventions;
+8. the MBC3/MBC30 test ROMs only as test-ROM design inspiration.
 
 Never convert an uncertain observation into a normative PASS/FAIL expectation. Existing emulator behavior and existing test ROMs are not hardware specifications by themselves.
 

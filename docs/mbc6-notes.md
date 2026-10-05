@@ -166,27 +166,28 @@ The other three were significant:
   every detail, which carries real weight — this isn't one source's
   guess, it's two independent tools converging on the same bytes.
 
-### Two changes to this ROM's flash.asm (the first one is now in question)
+### Flash reset follows the Net de Get-specific documented procedure
 
-1. **`Flash_Reset` wrote `$F0` twice per window; it now writes it once
-   per window.** The earlier version followed iceboy's Net de Get
-   `reset_flash()` procedure, which writes `$F0` twice in direct
-   succession to the same address ($4000) on purpose — two resets to
-   the same address leave the write-buffer loading mode without
-   starting a program operation — and a third time after 100 ms.
-   The change was made after tracing GBE+'s source
-   (`src/dmg/mbc6.cpp`): a `$F0` write only *terminates* a pending
-   status (`flash_stat & 0x81`); once the first `$F0` has cleared it,
-   a *second* `$F0` falls through to the ordinary array-write path and
-   is stored as data. Reproduced in GBE+: TD1 read back `$F0` instead
-   of `$FF` at the offset the second reset had been written to. Per the
-   development notes, neither FlashGBX nor cartreader sends a repeated
-   `$F0` to the same address (not re-checked on 2026-10-04).
-   *Correction (2026-10-04):* storing a reset as data is GBE+
-   behavior, not documented hardware behavior, and iceboy — which
-   ranks above the dumper tools in this project's source order —
-   documents the double reset deliberately. Whether to restore
-   iceboy's sequence is an open decision; the code is unchanged.
+1. **`Flash_Reset` follows iceboy's Net de Get-specific pseudocode.**
+   After enabling flash and mapping both windows to flash, it writes
+   `$F0` twice to `$4000`, waits 100 ms, then writes `$F0` there once
+   more. The source says the first pair exits a pending write-buffer
+   load without starting programming, and the delayed write handles an
+   erase/program operation that ignored the earlier resets. This
+   procedure is based on the author's investigation and measurements
+   of Net de Get/related cartridges; it is not an official Macronix
+   datasheet. Pan Docs identifies the Net de Get flash as Macronix
+   MX29F008TC-14. We did not find a first-party datasheet for that exact
+   part. Macronix's official MX29F800C T/B datasheet is a related 8-Mbit
+   NOR reference: its reset table specifies `$F0` at any address, and
+   its reset section lists exit from silicon-ID mode and incomplete
+   command sequences. That supports the general meaning of `$F0`, but
+   does not establish the Net de Get-specific three-write sequence or
+   its 100 ms delay. Those details remain grounded in iceboy's
+   cartridge-specific pseudocode and measured operation timings. The
+   former one-per-window sequence was motivated by GBE+'s emulator
+   behavior; that observation is not evidence to override the
+   documented cartridge procedure.
 2. **The buffered-write "commit" byte repeated the real data value
    instead of writing literal `$00`.** An earlier version's commit
    step was `ld a,[hl] / ld [hl],a` — re-write whatever value was
