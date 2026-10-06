@@ -114,14 +114,13 @@ SKIP/INFO/`-` for "didn't run this build"), a failure detail page
 (test ID, bank, full 16-bit address, expected/actual byte), and an
 INFO/experimental page (T34's checksum, T35's status byte, EX01's
 observed bytes, EX02's flag). With `ENABLE_DESTRUCTIVE_FLASH_TESTS=1`
-and the on-screen confirmation held, the full run (safe + TD1-TD6)
-reports `P:14 F:05 S:01 I:06` on mGBA — TD1 (erase) and TD4 (status/
-timeout) PASS, TD2 (buffered program) and TD3 (1->0 semantics) FAIL,
-consistent with the same incomplete flash command emulation noted
-above; TD5 is INFO and TD6 is SKIP by design (see `docs/test-matrix.md`).
-TD1's PASS on mGBA does **not** show that erase works there: mGBA
-ignores every flash write, and a fresh save already reads `$FF`, so
-TD1 passes without any erase taking place.
+and the on-screen confirmation held, the full run (safe + TD1-TD8)
+reports `P:21 F:00 S:01 I:06` on the local mGBA `feature/full_server`
+working tree (base `d80a87ee` plus uncommitted changes), with a valid M6TS
+checksum. TD7 and TD8 pass there for out-of-order partial programming,
+trigger-address bank selection, `$F0` payload, and repeated-slot abort.
+The safe run is `P:15 F:00 S:00 I:05`. This is development-tree evidence;
+it does not establish behavior in a released mGBA build or on hardware.
 
 One bug worth recording: `wPrevJoypad` (used to edge-detect the A
 press that advances a page) was originally seeded to 0 on entry to

@@ -8,7 +8,7 @@ DEF RESULT_SKIP EQU 2
 DEF RESULT_INFO EQU 3
 ; Not one of docs/project-rules.md's four semantic result classes — internal-only
 ; sentinel so the on-screen results grid can tell "never ran this
-; build" (e.g. TD1-TD6 in a safe build) apart from an actual PASS,
+; build" (e.g. TD1-TD8 in a safe build) apart from an actual PASS,
 ; which is numerically 0. ResetTestState initializes every slot to
 ; this; RecordResult overwrites it for whichever tests actually run.
 DEF RESULT_NOT_RUN EQU 4
@@ -41,10 +41,12 @@ DEF T_TD2 EQU 21 ; 128-byte buffered programming
 DEF T_TD3 EQU 22 ; 1->0 programming semantics
 DEF T_TD4 EQU 23 ; Flash status bits (completion, bounded timeout)
 DEF T_TD5 EQU 24 ; Sector-0 WP behavior (INFO)
-DEF T_TD6 EQU 25 ; Hidden-region erase/program (SKIP — undocumented)
+DEF T_TD6 EQU 25 ; Hidden-region erase/program (SKIP pending verified procedure)
+DEF T_TD7 EQU 26 ; Partial/out-of-order buffer; trigger address selects destination
+DEF T_TD8 EQU 27 ; $F0 payload versus repeated-slot abort
 
 ; NUM_TESTS must cover the destructive IDs too so wTestStatus/the
 ; result-block bitset (docs/result-format.md) have room for them even
 ; in a safe-only build — they stay at RESULT_NOT_RUN when destructive
 ; tests never run, and the results grid shows that distinctly from PASS.
-DEF NUM_TESTS EQU 26
+DEF NUM_TESTS EQU 28

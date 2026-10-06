@@ -1,5 +1,5 @@
 ; Text UI: CGB palette/tilemap setup, an original 5x7 font loader, a
-; plain string printer, and a 3-page results viewer (all 26 tests'
+; plain string printer, and a 3-page results viewer (all 28 tests'
 ; PASS/FAIL/SKIP/INFO status, a detailed first-failure page, and an
 ; INFO/experimental page) with A-button paging. This is the ROM's only
 ; way to show its own results — docs/project-rules.md requires the detail to be
@@ -441,7 +441,7 @@ TestShortNames:
     db "T20","T21","T22","T23","T24"
     db "T30","T31","T32","T33","T34","T35"
     db "EX1","EX2"
-    db "TD1","TD2","TD3","TD4","TD5","TD6"
+    db "TD1","TD2","TD3","TD4","TD5","TD6","TD7","TD8"
 
 ; --- DrawFailurePage ---
 ; Detailed first-failure record, or a "no failures" message.
