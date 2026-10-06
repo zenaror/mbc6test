@@ -344,3 +344,19 @@ reset, `$AA`/`$55` unlock, `$90` autoselect, `$80`…`$30` sector erase,
 programming (no 128-byte buffer), status bits (DQ7/DQ6/DQ5) and has no
 hidden region, so it cannot validate anything MBC6-specific and is not
 an authority for this project (checked 2026-10-04).
+### TD9 cross-window hidden-map fixture (2026-10-06)
+
+Added a destructive, fixture-only observation after a completed sector-7
+erase and `$F0`: enter hidden-map mode and XOR the same 256 local offsets
+through windows A and B independently. The two values are INFO only because
+the reviewed sources do not establish cross-window equality as a hardware
+requirement.
+
+Validated with the disposable headless fixture against the mGBA core built
+from the current `feature/mbc6-complete` checkout (base commit
+`fca224b25`, local uncommitted cross-window fix). The `.sav.flash` fixture
+contained `$66` at hidden-map index 5 and `$FF` elsewhere. The ROM completed
+with M6TS v2.2 `P:21 F:0 S:1 I:7`; TD9 status was INFO and its A/B checksums
+were both `$99`, matching the fixture. The result-block checksum verified.
+This validates the ROM observation path against that emulator build and
+fixture only; it is not hardware evidence.

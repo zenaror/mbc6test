@@ -1,4 +1,4 @@
-; Destructive flash tests: TD1-TD8.
+; Destructive flash tests: TD1-TD9.
 ;
 ; docs/project-rules.md "Destructive flash policy": compiled in only when built
 ; with ENABLE_DESTRUCTIVE_FLASH_TESTS=1 (default is 0 — see Makefile).
@@ -486,6 +486,51 @@ Test_TD8:
     ld [wLastCheckBank], a
     ld a, T_TD8
     call RecordFailureDetail
+    ret
+
+; --- Test_TD9 --- hidden-map observation through A and B after erase/F0.
+; A completed sector-7 erase exercises the post-operation reset path. The
+; six-write hidden-map unlock is then issued and the same 256-byte offsets
+; are checksummed independently through both ROM/flash windows. The two
+; values are retained as INFO only: cross-window equality is not asserted
+; as a hardware requirement by the sources reviewed so far. This operation
+; is destructive and is intended only for a disposable emulator fixture.
+EXPORT Test_TD9
+Test_TD9:
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call Flash_EraseSector
+    jr nc, .eraseComplete
+    ld a, T_TD9
+    ld d, RESULT_SKIP
+    call RecordResult
+    ret
+.eraseComplete:
+    call Flash_EnterHiddenMode
+
+    ld hl, MBC6_ROM_WIN_A
+    ld b, 0                 ; 0 used as "256" via 8-bit wraparound
+    xor a
+.sumA:
+    xor [hl]
+    inc hl
+    dec b
+    jr nz, .sumA
+    ld [wTD9HiddenAChecksum], a
+
+    ld hl, MBC6_ROM_WIN_B
+    ld b, 0
+    xor a
+.sumB:
+    xor [hl]
+    inc hl
+    dec b
+    jr nz, .sumB
+    ld [wTD9HiddenBChecksum], a
+
+    call Flash_Reset
+    ld a, T_TD9
+    ld d, RESULT_INFO
+    call RecordResult
     ret
 
 ENDC

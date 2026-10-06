@@ -36,18 +36,19 @@ any particular emulator's behavior.
 | TD6 | Hidden-region erase/program | Destructive, optional/advanced | Reserved; the current ROM does not issue hidden-region erase/program commands | iceboy Nintendo Power GB Memory doc; exact safe procedure not yet reviewed into the ROM | SKIP | Implemented as explicit SKIP, disabled by default |
 | TD7 | Partial/out-of-order page buffer and trigger destination | Destructive, fixture only | Loads slots 5 then 1 into an incomplete buffer in bank 112; repeats the last slot (slot 1) at the mapped address in bank 113 to trigger; verifies both bytes at the trigger destination | Iceboy Nintendo Power GB Memory doc, buffered-write procedure | PASS if completion is bounded and bytes land in bank 113 at the trigger-selected offsets | Implemented, disabled by default |
 | TD8 | `$F0` payload vs buffer abort | Destructive, fixture only | Programs `$F0` as a non-trigger payload byte, then repeats another slot with non-`$F0` to commit; separately repeats a slot with `$F0` to abort and verifies the array remains erased | Iceboy Nintendo Power GB Memory doc, buffered-write abort procedure | PASS if payload `$F0` is stored and abort leaves array unchanged | Implemented, disabled by default |
+| TD9 | Hidden-map reads through A/B after erase and `$F0` | Destructive fixture observation | Completes a sector-7 erase/reset, enters hidden-map mode, records XOR checksums of the same 256 local offsets via A and B | Pan Docs hidden-map read mode; Dan Docs MBC6 flash-I/O latch is reverse-engineering evidence | INFO only; pair is shown for comparison, equality is not a hardware assertion | Implemented as INFO, disabled by default |
 
 ## Notes
 
 - "Implemented, disabled by default" means the code exists in
   `src/tests_flash_destructive.asm` but is compiled out unless built
   with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` (see `docs/project-rules.md` "Destructive
-  flash policy") — the default build cannot reach any of TD1-TD8.
+  flash policy") — the default build cannot reach any of TD1-TD9.
 - mGBA T31-T33 results refer only to the local uncommitted
   `feature/full_server` working tree and do not imply a released build or
   hardware result. See `docs/mbc6-notes.md` for previous emulator findings.
 - INFO results never contribute to the PASS/FAIL compatibility score
   (`RecordResult` in `src/test_common.asm`).
-- TD7 and TD8 are intended for the mGBA emulator fixture only. The ROM's
+- TD7-TD9 are intended for the mGBA emulator fixture only. The ROM's
   destructive confirmation does not make arbitrary physical cartridges
   disposable; do not run these tests on original hardware or valuable flash.

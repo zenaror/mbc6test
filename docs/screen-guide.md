@@ -20,7 +20,7 @@ The ROM shows one of these on boot:
    with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` — never present in a
    default build). Hold **A+B+START** together for about 2 seconds to
    proceed, or press **SELECT** to skip straight to the results below
-   without running TD1-TD8.
+   without running TD1-TD9.
 3. **Results** (always shown once the safe test batch finishes). Three
    pages, cycled by pressing **A**:
    - **`MBC6 TEST RESULTS`** — every test's ID and status.
@@ -149,7 +149,7 @@ EX2 C6ROMFLAG =$00
 ## Machine-readable results
 
 If you have a way to inspect SRAM (a savestate, a memory viewer, a
-script), `docs/result-format.md` documents a 20-byte struct at SRAM
+script), `docs/result-format.md` documents a 21-byte struct at SRAM
 bank 7 / window B offset `$F00` with the same information as the
 results page in binary form — useful for scripted verification
 instead of reading the screen.

@@ -42,9 +42,9 @@ wFailAddrLo::   db
 wFailExpected:: db
 wFailActual::   db
 
-; Scratch for WriteResultBlock's failed-test bitset (24 bits, covers
-; test IDs 0-23 — see docs/result-format.md).
-wFailedBitset: ds 3
+; Scratch for WriteResultBlock's failed-test bitset (32 bits, covers
+; test IDs 0-31 — see docs/result-format.md).
+wFailedBitset: ds 4
 
 SECTION "Test Common", ROM0
 
@@ -266,7 +266,7 @@ CheckByteAt:
     ret
 
 ; --- WriteResultBlock ---
-; Writes the 20-byte machine-readable result block described in
+; Writes the 21-byte machine-readable result block described in
 ; docs/result-format.md to SRAM bank 7 / window B, offset $F00. Call
 ; once, after the full safe test batch (through EX01/EX02) has
 ; finished — docs/project-rules.md: "Do not use the result block in a way that
@@ -285,9 +285,9 @@ WriteResultBlock:
     ld [hl+], a
     ld a, $53 ; 'S'
     ld [hl+], a
-    ld a, 1
+    ld a, 2
     ld [hl+], a              ; format_version
-    ld a, 1
+    ld a, 2
     ld [hl+], a              ; suite_version
     ld a, [wSummaryPass]
     ld [hl+], a
@@ -306,6 +306,8 @@ WriteResultBlock:
     ld a, [wFailedBitset + 1]
     ld [hl+], a
     ld a, [wFailedBitset + 2]
+    ld [hl+], a
+    ld a, [wFailedBitset + 3]
     ld [hl+], a
 
     ld a, [wFailureRecorded]
@@ -338,9 +340,9 @@ WriteResultBlock:
     ld a, [wFailActual]
     ld [hl+], a
 .checksum:
-    push hl                  ; hl is at offset 19, where the checksum goes
+    push hl                  ; hl is at offset 20, where the checksum goes
     ld hl, MBC6_SRAM_WIN_B + $F00
-    ld b, 19
+    ld b, 20
     xor a
 .sumLoop:
     add a, [hl]
@@ -351,13 +353,14 @@ WriteResultBlock:
     ld [hl], a
     ret
 
-; Fills wFailedBitset[0..2] from wTestStatus[0..NUM_TESTS-1]; bit
+; Fills wFailedBitset[0..3] from wTestStatus[0..NUM_TESTS-1]; bit
 ; (id mod 8) of byte (id / 8) is set when that test's status is FAIL.
 ComputeFailedBitset:
     xor a
     ld [wFailedBitset + 0], a
     ld [wFailedBitset + 1], a
     ld [wFailedBitset + 2], a
+    ld [wFailedBitset + 3], a
     ld hl, wTestStatus
     ld b, 0
 .loop:
@@ -371,7 +374,7 @@ ComputeFailedBitset:
     ld a, b
     srl a
     srl a
-    srl a                    ; a = byte index (0-2)
+    srl a                    ; a = byte index (0-3)
     ld c, a
     ld a, b
     and $07                  ; a = bit index (0-7)

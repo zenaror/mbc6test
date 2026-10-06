@@ -47,7 +47,7 @@ fontes originais, seguindo a hierarquia de fontes de
   lacuna de emulador é registrado como tal; comportamento incerto vira
   `INFO` ou `SKIP`.
 - Não rode operações destrutivas de flash no desenvolvimento normal. Os
-  testes TD1–TD8 só existem no build com `ENABLE_DESTRUCTIVE_FLASH_TESTS=1`.
+  testes TD1–TD9 só existem no build com `ENABLE_DESTRUCTIVE_FLASH_TESTS=1`.
 - Ao testar em emulador, capture só a janela dele (por exemplo,
   `import -window <id>`), nunca a tela inteira: a área de trabalho é
   compartilhada com outras sessões.
