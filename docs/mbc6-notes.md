@@ -728,3 +728,30 @@ also passed56 checks against the installed ed393f522 library in
 has diagnostic buildID70E44E9+, distinct from the frozen25c8627 artifact.
 No latch read value was promoted to a hardware requirement. Original-game
 maintenance traces and physical latch lifetime remain separate evidence.
+
+### Clean mGBA `61f28d126` regression recheck (2026-10-06)
+
+Frozen latch Test ROM `1a1ae52`, offline `25c8627`, and legacy safe/fixture
+`25c8627` were rerun against isolated clean mGBA
+`61f28d126a2e369607fba4b773b0c06dfc87193b`.
+Runtime version `0.11-feature/full_server-9342-61f28d126` and library SHA-256
+`7b072fa21168ece875baceb979113afe2c0cb298da52d45b599941c6a95c2f2c`
+were confirmed, with no dirty suffix and no library mutation during testing.
+
+- M6FL:21 integrity checks passed; continuous BFF/FF, cycled BA5/C3,
+  new-opcode BA5/C3, A control preserved. Result remains INFO.
+  Report `/tmp/mbc6-latch-44k5b0su/report.json`.
+- Offline:56 checks passed, including full8192-byte installation and zero-write
+  fresh-core reopen, plus cancellation and rejection scenarios.
+  Report `/tmp/mbc6-offline-4vumr3wq/report.json`.
+- Legacy: WP0/WP1 each15/0/0/5, marked fixture22/0/0/10,
+  no-TD6-marker fixture21/0/1/10; T30PASS/T35INFO in every case.
+  Report `/tmp/mbc6-runtime-20261006/clean-legacy-5r54218l/report.json`.
+
+Full frozen-artifact identity and observation limits are recorded in
+[the latch fixture reference](flash-latch-fixture.md#clean-committed-core-recheck-2026-10-06).
+These results replace the need to rely solely on a dirty candidate for this
+regression checkpoint. Earlier candidate runs remain historical evidence.
+No original-game maintenance flow was executed in this Test ROM recheck;
+those traces belong to the mGBA owner's separate validation. Main and released
+fixtures remain unchanged. Hardware latch lifetime is still unvalidated.

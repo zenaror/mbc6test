@@ -148,3 +148,42 @@ enable cycle while preserving the continuously-enabled result. It does not
 independently prove that this is the hardware rule or the original-game
 MOVE/DELETE failure cause. The mGBA owner reports natural maintenance runs
 improved with this candidate; those runs are separate from this fixture.
+
+## Clean committed core recheck (2026-10-06)
+
+The frozen postcommit Test ROM `1a1ae52` was rerun against clean mGBA
+`61f28d126a2e369607fba4b773b0c06dfc87193b`. The runtime reported
+`0.11-feature/full_server-9342-61f28d126`, without a dirty suffix.
+The isolated library SHA-256 was
+`7b072fa21168ece875baceb979113afe2c0cb298da52d45b599941c6a95c2f2c`.
+ROM SHA-256 was
+`1f8dd61bfc32db6e959d1579149b25f1129da3c0df9c710e1614ac162d2adb1d`;
+symbols retain SHA-256
+`686aad3449f7a49afedb27103bb59b5bf702dc37a81d6762ae98b76b79bc873e`.
+These artifacts were not rebuilt for this documentation update.
+
+All21 fixture-integrity checks passed in
+`/tmp/mbc6-latch-44k5b0su/report.json`. Continuous B reads were FF/FF,
+cycled B reads A5/C3, and reads after the new opcode A5/C3. A remained
+A5/C3 throughout. The positive result remains INFO; missing marker returns
+SKIP with the entire flash unchanged. This reproduces the experimental
+candidate's observation using a committed core, without establishing a
+hardware rule or independently proving the natural-game failure cause.
+
+The frozen offline ROM `25c8627` also passed all56 checks on this library in
+`/tmp/mbc6-offline-4vumr3wq/report.json`: full8192-byte install, fresh-core
+reopen with zero writes, cancellation, invalid prior record, missing marker
+and corrupt payload handling. Its ROM SHA-256 is
+`bb1470e98f385ec255404b645acefa113013673ff83f014770f9d35afd5b2d79`.
+No main-branch ROM or released fixture was replaced by this investigation.
+
+Four frozen legacy cases also completed with valid M6TS and no FAIL:
+WP0 and WP1 each15/0/0/5, marked destructive fixture22/0/0/10, and
+fixture without TD6 marker21/0/1/10 (TD6 SKIP). T30 was PASS and T35 INFO;
+raw protection status was80 for WP0 and82 for WP1. Both safe flash sidecars
+were unchanged. The legacy report is
+`/tmp/mbc6-runtime-20261006/clean-legacy-5r54218l/report.json`.
+All executions used new disposable saves. The isolated library hash was
+unchanged before and after testing, and the runtime version was clean in
+every case. The fixture-without-marker case still runs the other destructive
+tests; it is not an assertion that its entire sidecar remains unchanged.
