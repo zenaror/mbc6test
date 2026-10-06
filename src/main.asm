@@ -70,8 +70,16 @@ IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS
     ; Never reachable in a default build (Makefile defaults this to 0)
     ; — docs/project-rules.md "Destructive flash policy". Requires deliberate
     ; multi-button confirmation before the first destructive operation.
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+    call Offline_Init
+ENDC
     call UI_ConfirmDestructive
     jr c, .skipDestructive
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+    ; Dedicated install/reopen workflow: the ordinary destructive suite
+    ; would erase the installed payload before reopening can verify it.
+    call Test_NetDeGetOffline
+ELSE
     call Test_TD1
     call Test_TD2
     call Test_TD3
@@ -81,6 +89,12 @@ IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS
     call Test_TD7
     call Test_TD8
     call Test_TD9
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+    call Test_TD10
+    call Test_TD11
+    call Test_TD12
+ENDC
+ENDC
 .skipDestructive:
 ENDC
 

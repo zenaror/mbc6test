@@ -103,6 +103,21 @@ Flash_EnterIDMode:
     ld [FLASH_CMD_ADDR_A], a
     ret
 
+; --- Flash_EnterSector0Status ---
+; Iceboy's Net de Get protection probe enters program/status mode under WP,
+; reads bit 1, then resets. Do not write buffer data or repeat a buffer slot:
+; those are required to trigger persistent programming.
+EXPORT Flash_EnterSector0Status
+Flash_EnterSector0Status:
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, FLASH_CMD_PROGRAM
+    ld [FLASH_CMD_ADDR_A], a
+    ret
+
 ; --- Flash_EnterIDModeViaBankB ---
 ; Issues the complete unlock/autoselect sequence through window B alone.
 ; Bank B=2 maps CPU $7555 to flash address $5555; Bank B=1 maps
@@ -151,8 +166,9 @@ Flash_EnterHiddenMode:
 ; ==========================================================================
 ; Everything below is only assembled into ENABLE_DESTRUCTIVE_FLASH_TESTS=1
 ; builds (docs/project-rules.md "Destructive flash policy": default must be OFF, and
-; "no code path should issue erase, program, protect, or unprotect
-; commands" when it's off). The default Makefile invocation never
+; no default code path can trigger a persistent erase/program/protection
+; operation). T35's read-only status probe above never triggers programming.
+; The default Makefile invocation never
 ; defines this symbol as 1, so none of this exists in a normal build.
 ; ==========================================================================
 IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS
@@ -313,6 +329,19 @@ Flash_ProgramBuffer:
 ; Output: carry set on timeout.
 EXPORT Flash_ProgramBufferFill
 Flash_ProgramBufferFill:
+    call Flash_StartProgramBufferFill
+    call Flash_PollStatus
+    push af
+    call Flash_Reset
+    pop af
+    ret
+
+; Starts the same operation as Flash_ProgramBufferFill but deliberately
+; returns immediately after the commit write, with HL still pointing at
+; the trigger address. Fixture-only tests use this to sample status via
+; both windows before polling or issuing $F0.
+EXPORT Flash_StartProgramBufferFill
+Flash_StartProgramBufferFill:
     ld [wProgramTargetBank], a
     ld a, e
     ld [wProgramOffsetLo], a
@@ -357,12 +386,138 @@ Flash_ProgramBufferFill:
     dec hl
     xor a
     ld [hl], a        ; commit: literal $00, distinct from the fill value
-
-    call Flash_PollStatus
-    push af
-    call Flash_Reset
-    pop af
     ret
+
+; Whole-chip erase is deliberately absent from ordinary destructive builds.
+; It is included only in the additional disposable-mGBA-fixture build.
+; Its $10 command is listed in the archived/deprecated Pan Docs MBC6 table
+; (https://gbdev.gg8.se/wiki/articles/MBC6?oldid=962); this is fixture
+; coverage, not a claim about the exact MX29F008TC-14 hardware procedure.
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+; Hidden-map operations are also fixture-only. Input A = desired WP state
+; (1 disables WP / permits modification, 0 keeps WP enabled). The caller
+; must gate all destructive calls with the TD6 fixture marker.
+EXPORT Flash_StartMapErase
+Flash_StartMapErase:
+    ld [wTD6WriteEnable], a
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, FLASH_CMD_MAP_MODE
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, [wTD6WriteEnable]
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, FLASH_CMD_MAP_ERASE
+    ld [FLASH_CMD_ADDR_A], a
+    ld hl, MBC6_ROM_WIN_A
+    ret
+
+; Input: A = half selector 0/1, C = fill byte, D = desired WP state.
+; Writes the 128-byte map buffer in order and commits by repeating slot 127.
+EXPORT Flash_StartMapProgramPage
+Flash_StartMapProgramPage:
+    ld [wTD6MapHalf], a
+    ld a, c
+    ld [wTD6MapFill], a
+    ld a, d
+    ld [wTD6WriteEnable], a
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, FLASH_CMD_MAP_MODE
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, [wTD6WriteEnable]
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, FLASH_CMD_MAP_PROGRAM
+    ld [FLASH_CMD_ADDR_A], a
+    ld hl, MBC6_ROM_WIN_A
+    ld a, [wTD6MapHalf]
+    or a
+    jr z, .pageReady
+    ld de, $0080
+    add hl, de
+.pageReady:
+    ld b, 128
+.fillBuffer:
+    ld a, [wTD6MapFill]
+    ld [hl+], a
+    dec b
+    jr nz, .fillBuffer
+    dec hl
+    xor a
+    ld [hl], a ; repeated slot 127 with non-$F0 triggers page programming
+    ret
+
+EXPORT Flash_StartChipErase
+Flash_StartChipErase:
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, $80
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, FLASH_CMD_CHIP_ERASE
+    ld [FLASH_CMD_ADDR_A], a
+    ld hl, MBC6_ROM_WIN_A + FLASH_CMD_ADDR_A - $4000
+    ret
+
+; Fixture-only edge case for the first and last slots of a 128-byte page.
+; Input: A = physical bank, DE = page-aligned offset within the bank.
+; Writes slot 0, then slot 127, then repeats slot 127 with $00 to trigger.
+EXPORT Flash_StartProgramBufferEdges
+Flash_StartProgramBufferEdges:
+    ld [wProgramTargetBank], a
+    ld a, e
+    ld [wProgramOffsetLo], a
+    ld a, d
+    ld [wProgramOffsetHi], a
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, $A0
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, [wProgramTargetBank]
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, [wProgramOffsetLo]
+    ld e, a
+    ld a, [wProgramOffsetHi]
+    ld d, a
+    ld hl, MBC6_ROM_WIN_A
+    add hl, de
+    ld a, $A5
+    ld [hl], a                ; slot 0
+    ld de, 127
+    add hl, de
+    ld a, $5A
+    ld [hl], a                ; slot 127
+    xor a
+    ld [hl], a                ; repeated final slot is the trigger
+    ret
+ENDC
 
 SECTION "Flash Destructive Helpers WRAM", WRAM0
 wEraseTargetBank: db
@@ -370,5 +525,101 @@ wProgramTargetBank: db
 wProgramOffsetLo: db
 wProgramOffsetHi: db
 wProgramFillValue: db
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+wTD6WriteEnable: db
+wTD6MapHalf: db
+wTD6MapFill: db
+ENDC
 
+ENDC
+
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+    ASSERT ENABLE_DESTRUCTIVE_FLASH_TESTS && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+SECTION "Offline host flash helpers", ROM0
+
+; Same-window address translation from Net de Get ROM0 $164D-$1662:
+; A=2 reaches linear $5555 at CPU $5555; A=1 reaches $2AAA at $4AAA.
+; Restore A=2 for the opcode. Caller must enable/map flash first.
+Flash_UnlockViaBankA:
+    ld a, 2
+    call MBC6_SetROMBankA
+    ld a, FLASH_CMD_UNLOCK1
+    ld [$5555], a
+    ld a, 1
+    call MBC6_SetROMBankA
+    ld a, FLASH_CMD_UNLOCK2
+    ld [$4AAA], a
+    ld a, 2
+    jp MBC6_SetROMBankA
+
+; Fixture-only A-window erase. Caller checked the hidden fixture marker.
+; A=target bank. Reset uses the conservative Iceboy sequence, not the
+; singleton F0 used by the host before successful program readback.
+Flash_OfflineErase::
+    ld [wEraseTargetBank], a
+    call Flash_SelectCommandWindows
+    call Flash_UnlockViaBankA
+    ld a, $80
+    ld [$5555], a
+    call Flash_UnlockViaBankA
+    ld a, [wEraseTargetBank]
+    call MBC6_SetROMBankA
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, $30
+    ld [$4000], a
+    ld hl, $4000
+    call Flash_PollStatus
+    push af
+    call Flash_Reset
+    xor a
+    ld [MBC6_REG_FLASH_WE], a
+    pop af
+    ret
+
+; Input HL=aligned A-window destination, DE=128-byte WRAM source.
+; Sector 7 / bank 112 only. Follows host order: A-only unlock/A0,
+; remap target, raise WE, copy <=128 bytes, repeat last slot with zero,
+; bounded DQ7 poll, singleton F0 after ready, WE low before readback.
+; Carry set on timeout; unsuccessful polling uses the full Flash_Reset.
+Flash_OfflineProgramPage::
+    push hl
+    push de
+    call Flash_SelectCommandWindows
+    call Flash_UnlockViaBankA
+    ld a, FLASH_CMD_PROGRAM
+    ld [$5555], a
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankA
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    pop de
+    pop hl
+    ld b, 128
+.copy:
+    ld a, [de]
+    ld [hl+], a
+    inc de
+    dec b
+    jr nz, .copy
+    dec hl
+    xor a
+    ld [hl], a ; commit signal, not the buffered value
+    ld a, [hl]
+    ld [wOfflineBusy], a ; observational, no required latency value
+    call Flash_PollStatus
+    ld a, [wLastFlashStatus]
+    ld [wOfflineReady], a
+    jr c, .timeout
+    ld a, FLASH_CMD_RESET
+    ld [hl], a ; operation completed; host's single reset before readback
+    xor a
+    ld [MBC6_REG_FLASH_WE], a
+    ret
+.timeout:
+    call Flash_Reset
+    xor a
+    ld [MBC6_REG_FLASH_WE], a
+    scf
+    ret
 ENDC

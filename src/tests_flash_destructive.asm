@@ -1,4 +1,4 @@
-; Destructive flash tests: TD1-TD9.
+; Destructive flash tests: TD1-TD12.
 ;
 ; docs/project-rules.md "Destructive flash policy": compiled in only when built
 ; with ENABLE_DESTRUCTIVE_FLASH_TESTS=1 (default is 0 — see Makefile).
@@ -18,6 +18,14 @@ DEF TD_SAMPLE_OFFSETS_COUNT EQU 4
 SECTION "Destructive Tests WRAM", WRAM0
 wTD5ProtectedByte::   db
 wTD5UnprotectedByte:: db
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+wTD6ReadWindow: db
+wTD6ReadPhase: db
+wTD6StatusBusyA: db
+wTD6StatusBusyB: db
+wTD6StatusReadyA:: db
+wTD6StatusReadyB:: db
+ENDC
 
 SECTION "Destructive Tests", ROM0
 
@@ -202,7 +210,7 @@ Test_TD3:
     call RecordFailureDetail
     ret
 
-; --- Test_TD4 --- Flash status bits (completion, bounded timeout).
+; --- Test_TD4 --- Flash ready bit and bounded software polling timeout.
 ; Reprograms the same (already non-$FF) byte again — a harmless,
 ; idempotent-enough operation on a disposable fixture bank — and
 ; asserts Flash_PollStatus reported completion without hitting the
@@ -283,21 +291,216 @@ Test_TD5:
     call RecordResult
     ret
 
-; --- Test_TD6 --- Hidden-region erase/program (SKIP).
-; The iceboy documentation (this project's authoritative flash source)
-; describes how to enter hidden-region *read* mode, but does not
-; document an erase/program command sequence for that region.
-; Guessing one would mean issuing an undocumented command against
-; nonvolatile storage — exactly what docs/project-rules.md prohibits ("Never
-; convert an uncertain observation into a normative PASS/FAIL
-; expectation"). SKIP is the honest result until an authoritative
-; source documents this.
+; --- Test_TD6 --- Hidden-map erase/program (fixture-only).
+; Iceboy documents these commands and buffered-write rules. In the fixture
+; build, this test runs only if the hidden map contains the unique TD6 marker
+; seeded by the disposable mGBA runner at offsets $F0-$FF. The marker gate is
+; checked before any hidden-map write; without it TD6 records SKIP. This is
+; not a hardware detector: never run this fixture ROM on a cartridge.
 EXPORT Test_TD6
 Test_TD6:
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+    call Flash_EnterHiddenMode
+    ld hl, MBC6_ROM_WIN_A + $00F0
+    ld de, TD6_FixtureMarker
+    ld b, 16
+.markerLoop:
+    ld a, [hl+]
+    ld c, a
+    ld a, [de]
+    inc de
+    cp c
+    jp nz, .notFixture
+    dec b
+    jr nz, .markerLoop
+    call Flash_Reset
+
+    ; Erase the hidden map and verify the full 256-byte erased value in
+    ; both windows. Flash_PollStatus is bounded and ready is checked A/B.
+    ld a, 1                  ; disable WP for this documented destructive op
+    call Flash_StartMapErase
+    call TD6_CheckMapReady
+    jp c, .statusFailure
+    call Flash_Reset
+    xor a                    ; phase 0 means all 256 bytes should be $FF
+    ld b, 0
+    call TD6_VerifyMap
+    jp c, .verificationFailure
+    ld a, 2
+    ld b, 0
+    call TD6_VerifyMap
+    jp c, .verificationFailure
+    xor a
+    ld c, $10
+    ld d, 1
+    call Flash_StartMapProgramPage
+    call TD6_CheckMapReady
+    jp c, .statusFailure
+    call Flash_Reset
+    ld a, 1
+    ld c, $80
+    ld d, 1
+    call Flash_StartMapProgramPage
+    call TD6_CheckMapReady
+    jp c, .statusFailure
+    call Flash_Reset
+
+    ; Verify every byte through A, then every byte through B: first 128
+    ; bytes are $10, second 128 bytes are $80.
+    ld a, 1
+    ld b, 1
+    call TD6_VerifyMap
+    jp c, .verificationFailure
+    ld a, 2
+    ld b, 1
+    call TD6_VerifyMap
+    jp c, .verificationFailure
+
+    ; With WP enabled (WE register 0), both erase and program commands
+    ; must be ignored. A $00 program attempt would change the sentinels
+    ; if it were accepted, so re-read and compare all 256 bytes afterward.
+    xor a
+    call Flash_StartMapErase
+    call Flash_Reset
+    xor a
+    ld c, $00
+    ld d, 0
+    call Flash_StartMapProgramPage
+    call Flash_Reset
+    ld a, 1
+    ld b, 1
+    call Flash_StartMapProgramPage
+    call Flash_Reset
+    xor a
+    ld b, 1
+    call TD6_VerifyMap
+    jp c, .verificationFailure
+    ld a, 2
+    ld b, 1
+    call TD6_VerifyMap
+    jp c, .verificationFailure
+
+    ld a, T_TD6
+    ld d, RESULT_PASS
+    call RecordResult
+    ret
+.notFixture:
+    call Flash_Reset
     ld a, T_TD6
     ld d, RESULT_SKIP
     call RecordResult
     ret
+.statusFailure:
+    ld a, [wLastFlashStatus]
+    ld [wLastCheckActual], a
+    ld a, $80
+    ld [wLastCheckExpected], a
+    ld a, $40
+    ld [wLastCheckAddrHi], a
+    xor a
+    ld [wLastCheckAddrLo], a
+    ld [wLastCheckBank], a
+    call Flash_Reset
+    ld a, T_TD6
+    call RecordFailureDetail
+    ret
+.verificationFailure:
+    call Flash_Reset
+    ld a, T_TD6
+    call RecordFailureDetail
+    ret
+ELSE
+    ld a, T_TD6
+    ld d, RESULT_SKIP
+    call RecordResult
+    ret
+ENDC
+
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+TD6_FixtureMarker:
+    db "M6TD6FIXTUREONLY"
+
+; Input A = read window (1=A, 2=B), B = expected phase (0=erased,
+; 1=programmed). Returns carry on first mismatch with wLastCheck* filled.
+TD6_VerifyMap:
+    ld [wTD6ReadWindow], a
+    ld a, b
+    ld [wTD6ReadPhase], a
+    call Flash_EnterHiddenMode
+    ld a, [wTD6ReadWindow]
+    cp 2
+    ld hl, MBC6_ROM_WIN_A
+    jr nz, .windowSelected
+    ld hl, MBC6_ROM_WIN_B
+.windowSelected:
+    ld c, 0
+.byteLoop:
+    ld a, [hl+]
+    ld d, a
+    ld a, [wTD6ReadPhase]
+    or a
+    ld a, $FF
+    jr z, .expectedReady
+    ld a, $10
+    bit 7, c
+    jr z, .expectedReady
+    ld a, $80
+.expectedReady:
+    ld e, a
+    ld a, d
+    cp e
+    jr z, .byteOk
+    ld [wLastCheckActual], a
+    ld a, e
+    ld [wLastCheckExpected], a
+    ld a, [wTD6ReadWindow]
+    cp 2
+    ld a, $40
+    jr nz, .storeAddrHi
+    ld a, $60
+.storeAddrHi:
+    ld [wLastCheckAddrHi], a
+    ld a, c
+    ld [wLastCheckAddrLo], a
+    xor a
+    ld [wLastCheckBank], a
+    call Flash_Reset
+    scf
+    ret
+.byteOk:
+    inc c
+    jr nz, .byteLoop
+    call Flash_Reset
+    or a
+    ret
+
+; Sample the immediate status byte through both windows, then poll each
+; window independently until ready (with the shared bounded timeout).
+TD6_CheckMapReady:
+    ld a, [MBC6_ROM_WIN_A]
+    ld [wTD6StatusBusyA], a
+    ld a, [MBC6_ROM_WIN_B]
+    ld [wTD6StatusBusyB], a
+    ld hl, MBC6_ROM_WIN_A
+    call Flash_PollStatus
+    ret c
+    ld a, [wLastFlashStatus]
+    ld [wTD6StatusReadyA], a
+    bit FLASH_STATUS_READY_BIT, a
+    jr z, .timeout
+    ld hl, MBC6_ROM_WIN_B
+    call Flash_PollStatus
+    ret c
+    ld a, [wLastFlashStatus]
+    ld [wTD6StatusReadyB], a
+    bit FLASH_STATUS_READY_BIT, a
+    jr z, .timeout
+    or a
+    ret
+.timeout:
+    scf
+    ret
+ENDC
 
 ; --- Test_TD7 --- Partial, out-of-order page buffer and trigger destination.
 ; Uses only sector 7 in a disposable emulator fixture. Data slots 5 then 1
@@ -532,5 +735,128 @@ Test_TD9:
     ld d, RESULT_INFO
     call RecordResult
     ret
+
+; The additional cases below can erase the complete 1 MiB flash. They are
+; compiled only for disposable mGBA fixtures, never in the ordinary
+; ENABLE_DESTRUCTIVE_FLASH_TESTS build. See Makefile and docs/test-matrix.md.
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+
+; --- Test_TD10 --- enter ID mode in one window, read the other (INFO).
+EXPORT Test_TD10
+Test_TD10:
+    call Flash_EnterIDMode
+    ld a, [MBC6_ROM_WIN_B]
+    ld [wTD10IDABManufacturer], a
+    ld a, [MBC6_ROM_WIN_B + 1]
+    ld [wTD10IDABDevice], a
+    call Flash_Reset
+
+    call Flash_EnterIDModeViaBankB
+    ld a, [MBC6_ROM_WIN_A]
+    ld [wTD10IDBAManufacturer], a
+    ld a, [MBC6_ROM_WIN_A + 1]
+    ld [wTD10IDBADevice], a
+    call Flash_Reset
+
+    ld a, T_TD10
+    ld d, RESULT_INFO
+    call RecordResult
+    ret
+
+; --- Test_TD11 --- status snapshots in both windows (INFO).
+; The operation sequence is documented, but cross-window status visibility
+; and exact busy-sample timing are observations. This test includes a chip
+; erase and therefore requires a disposable mGBA fixture build.
+EXPORT Test_TD11
+Test_TD11:
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call Flash_EraseSector
+    jr c, .skip
+
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    ld de, $0000
+    ld c, $A5
+    call Flash_StartProgramBufferFill
+    ld a, [MBC6_ROM_WIN_A]
+    ld [wTD11ProgramBusyA], a
+    ld a, [MBC6_ROM_WIN_B]
+    ld [wTD11ProgramBusyB], a
+    call Flash_PollStatus
+    ld a, [MBC6_ROM_WIN_A]
+    ld [wTD11ProgramReadyA], a
+    ld a, [MBC6_ROM_WIN_B]
+    ld [wTD11ProgramReadyB], a
+    call Flash_Reset
+
+    call Flash_StartChipErase
+    ld a, [MBC6_ROM_WIN_A]
+    ld [wTD11ChipBusyA], a
+    ld a, [MBC6_ROM_WIN_B]
+    ld [wTD11ChipBusyB], a
+    call Flash_PollStatus
+    ld a, [MBC6_ROM_WIN_A]
+    ld [wTD11ChipReadyA], a
+    ld a, [MBC6_ROM_WIN_B]
+    ld [wTD11ChipReadyB], a
+    call Flash_Reset
+
+    ld a, T_TD11
+    ld d, RESULT_INFO
+    call RecordResult
+    ret
+.skip:
+    ld a, T_TD11
+    ld d, RESULT_SKIP
+    call RecordResult
+    ret
+
+; --- Test_TD12 --- buffer slots 0/127 at first and last bank pages (INFO).
+EXPORT Test_TD12
+Test_TD12:
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call Flash_EraseSector
+    jr c, .skip
+
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    ld de, $0000
+    call Flash_StartProgramBufferEdges
+    call Flash_PollStatus
+    push af
+    call Flash_Reset
+    pop af
+    jr c, .skip
+
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    ld de, $1F80
+    call Flash_StartProgramBufferEdges
+    call Flash_PollStatus
+    push af
+    call Flash_Reset
+    pop af
+    jr c, .skip
+
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, [MBC6_ROM_WIN_A + $0000]
+    ld [wTD12Edge0], a
+    ld a, [MBC6_ROM_WIN_A + $007F]
+    ld [wTD12Edge7F], a
+    ld a, [MBC6_ROM_WIN_A + $1F80]
+    ld [wTD12EdgeLast0], a
+    ld a, [MBC6_ROM_WIN_A + $1FFF]
+    ld [wTD12EdgeLast127], a
+
+    ld a, T_TD12
+    ld d, RESULT_INFO
+    call RecordResult
+    ret
+.skip:
+    ld a, T_TD12
+    ld d, RESULT_SKIP
+    call RecordResult
+    ret
+
+ENDC ; ENABLE_MGBA_FLASH_FIXTURE_TESTS
 
 ENDC

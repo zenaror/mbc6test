@@ -360,3 +360,289 @@ with M6TS v2.2 `P:21 F:0 S:1 I:7`; TD9 status was INFO and its A/B checksums
 were both `$99`, matching the fixture. The result-block checksum verified.
 This validates the ROM observation path against that emulator build and
 fixture only; it is not hardware evidence.
+
+### TD6 hidden-map fixture (2026-10-06)
+
+Added TD6 behind both destructive-build flags and an exact 16-byte fixture
+marker (`M6TD6FIXTUREONLY`) at hidden-map offsets `$F0-$FF`. The ROM checks the
+marker before issuing any hidden-map command; an absent/mismatched marker
+records SKIP. With the marker present, it erases and verifies all 256 bytes as
+`$FF` through A and B, programs the first 128-byte half with `$10` and the
+second with `$80`, checks ready status through both windows and `$F0` reset,
+then attempts erase and program with WE disabled and verifies all 256 bytes
+remain unchanged. The fixture-only warning calls out map and chip erase.
+
+Validated using ROM `/tmp/mbc6-test-TD6-fixture-411ba0b-plus.gbc` (SHA-256
+`9c7ba52875477cbac004a28656e7de68045bcf4add7aa24e373fdeee46068501`) and
+`/tmp/mgba-mbc6-qt-verify/libmgba.so.0.11.0` (SHA-256
+`c5a48043623e81b99b908b5ae226363cf7b682f95c523b129440c51aa1e5d514`). Runtime
+returned `M6TS fmt=2 suite=3 P/F/S/I=22/0/0/10 TD6=PASS`, busy `00/00`, ready
+`80/80`, and valid checksum. With a fresh all-`$FF` map lacking the marker,
+TD6 returned SKIP and all 256 bytes remained `$FF`. After closing and
+reopening mGBA, the saved map still contained 128 `$10` bytes followed by 128
+`$80` bytes; the second launch also skipped TD6 because the erase had removed
+the fixture marker. The ordinary destructive build was also runtime-checked
+and kept TD6 at SKIP even with the marker present. All sidecars and ROMs were
+confined to `/tmp`. This is mGBA fixture evidence only, never a hardware result.
+
+### Source correction: mass erase documentation (2026-10-06)
+
+An earlier TD11 source description said `$80/$10` appeared only in an archived
+Pan Docs table. Rechecking the current iceboy page disproved that: its flash
+command section documents mass erase (`$AA/$55/$80`, then `$AA/$55/$10`), says
+it erases the 1 MiB flash while preserving the hidden 256-byte map, and gives a
+Net de Get pseudocode procedure. Sector 0 is preserved when write or sector-0
+protection is enabled. This is cartridge-specific research, not a first-party
+MX29F008TC-14 datasheet; TD11 remains a destructive mGBA fixture observation.
+The current source and evidence classification are summarized in
+[`mbc6-reference.md`](mbc6-reference.md).
+
+The same source check clarified status bit 4: Dan Docs reports that Net de Get
+checks it as a timeout indicator, while iceboy classifies bits 5–4 as driven but
+unknown (observed low). The reference and project rules now preserve that
+uncertainty instead of presenting bit 4 as a settled chip-level requirement.
+
+### Independent coverage review against mGBA `4c8066be4` (2026-10-06)
+
+Read-only review of the collaborating mGBA checkout at clean
+`feature/mbc6-complete` commit `4c8066be4`, compared with the Test ROM sources:
+
+- **TD4 did not test DQ4.** `Test_TD4` calls the bounded `Flash_PollStatus`,
+  which checks ready bit 7 and reports if the ROM's software iteration limit
+  expires. `FLASH_STATUS_TIMEOUT_BIT` is defined but unused. The previous
+  matrix wording implied that chip status bit 4 was tested; it is now corrected.
+  mGBA's status reads in `src/gb/mbc/mbc.c` expose ready bit 7 and protection bit
+  1, but not bit 4. Given the Iceboy/Dan Docs evidence disagreement above, treat
+  DQ4 as an open compatibility observation, not a required behavior.
+- **T35 did not read protection status.** It selects flash bank 0 and records
+  array byte 0 without entering the flash status mode. The test remains INFO,
+  now named and documented as an array-byte sample. Iceboy's non-destructive
+  procedure enters program/status mode, samples bit 1 before any buffer trigger,
+  then resets; this could replace the raw sample if we want a useful protection
+  observation without changing persistent protection state.
+- **T30 did not prove A/B source-latch independence.** It toggles both source
+  registers before checking the signatures, so cross-coupled A/B source latches
+  could escape detection. The matrix now calls its coverage partial. A stronger
+  check should change one source at a time and inspect the other window before
+  touching that window; known flash contents may require a disposable seeded
+  fixture if a definitive array/source assertion is needed.
+
+The T35, TD4 code comments and matrix descriptions were adjusted to match the
+actual observations. At that review point T30 remained incomplete and T35 still
+sampled raw array data; the follow-up below records the completed fixes.
+
+The mGBA implementation paths reviewed include independent flash-source/bank
+mapping, command parsing, buffer trigger/abort, busy completion, protection,
+hidden map, and serialized operation state (`src/gb/mbc/mbc.c` and
+`src/gb/memory.c`). This source review found no contradiction in those paths
+with the fixture cases TD6–TD12 as documented. It is not a new runtime test;
+the collaborator reports the existing flash/save gates passed at this commit.
+
+### Safe coverage follow-up: T30 and T35 (2026-10-06)
+
+T30 now toggles A's source to flash and checks B's known ROM signature before
+changing B, restores A and checks its bank, then performs the inverse for B.
+This tests both directions without relying on any initial flash contents. A
+pathological flash image containing the exact 16-byte ROM signature at the
+mapped offset could still mask source coupling; the result is consequently
+understood as an isolation check with that small theoretical collision case.
+
+T35 now follows Iceboy's Net de Get `is_sector0_protected()` sequence: keep flash
+write protection enabled, issue `$AA/$55/$A0`, sample the raw status byte (bit
+1 indicates sector-0 protection), and immediately use `Flash_Reset`. It never
+loads program-buffer data or repeats a buffer slot, the documented programming
+trigger. This is a read-only INFO observation; no protection command or
+persistent flash operation is issued. The status meaning/procedure is
+cartridge-specific research, not a first-party Macronix datasheet. The mGBA
+source at `4c8066be4` maps `$A0` to status mode and returns ready/protection
+bits, but this source inspection does not establish physical-cart behavior.
+
+Only the default static ROM checks (`make` and `make verify`) were run after
+this change. No emulator runtime, destructive build, fixture, or hardware test
+was run in this follow-up.
+
+### Net de Get custom catalog integration report (2026-10-06)
+
+The REON server task reports that the opt-in per-user custom Net de Get catalog,
+authenticated download route, and eligibility-gated charging were implemented
+on branch `feature/net-de-get-custom-games` and pushed to GitHub `home` as
+`c83087d`. PHP 8.5 lint and an offline fixture reportedly passed, including
+opt-out with no download/charge and byte-for-byte comparison of a synthetic
+response body. No deployment was reported.
+
+The available PAD TEST fixture (`G001`, 168 bytes) is raw flash payload, not an
+HTTP wrapper. The wrapper format (header/chunks/footer/padding) and natural
+catalog recognition remain unverified against a real host capture. Until such
+evidence is available, do not treat the synthetic fixture as proof of the
+production wire format. This is a report from the related REON task, not an
+independent test performed in this MBC6 Test ROM checkout.
+
+### T30/T35 and full fixture regression at mGBA `4c8066be4` (2026-10-06)
+
+The updated ROM (build ID `411BA0B+`, uncommitted shared checkout) was built
+and statically verified in separate default and fixture directories under
+`/tmp/mbc6-runtime-20261006`. The mGBA core exported
+`0.11-feature/mbc6-complete-9338-4c8066be4` and full Git commit
+`4c8066be47ff2881c70974280297e04227965c4f`. The fresh Linux shared-library build
+was supplied by the collaborating mGBA task; the runner linked directly to
+`/tmp/mgba-mbc6-head-linux`, and the library hash was unchanged before/after.
+The older `/tmp/mgba-test-podman-build` library was not used for these runs
+because its embedded commit/version identified an earlier dirty build.
+
+| Disposable run | Frames | PASS / FAIL / SKIP / INFO | T30 | T35 raw status | M6TS checksum | Runner exit |
+|---|---:|---|---|---|---|---:|
+| Default, sector-0 protection metadata 0 | 40,900 | 15 / 0 / 0 / 5 | PASS | `$80` (bit 1 clear), INFO | `$42`, valid | 0 |
+| Default, sector-0 protection metadata 1 | 40,900 | 15 / 0 / 0 / 5 | PASS | `$82` (bit 1 set), INFO | `$42`, valid | 0 |
+| Destructive fixture, TD6 marker present | 41,030 | 22 / 0 / 0 / 10 | PASS | `$80`, INFO | `$4E`, valid | 0 |
+| Destructive fixture, TD6 marker absent | 41,030 | 21 / 0 / 1 / 10 | PASS | `$80`, INFO | `$4E`, valid | 0 |
+
+All M6TS records were format 2, suite 3, with first-failure ID `$FF`. The
+runner read observation/status addresses from each build's `.sym` file. In
+both default runs the complete `0x100101`-byte `.sav.flash` was byte-identical
+to its seed after unloading/syncing, including the protection metadata. This
+checks that the T35 probe did not change persistent flash in these emulator
+runs; it does not independently establish hardware safety or protection state.
+
+TD6 passed with the marker and skipped without it. Persisted hidden-map bytes
+were 128 `$10` bytes followed by 128 `$80` bytes after the marker run, and the
+seeded hidden map was unchanged in the no-marker run. TD10 observed `$C2/$81`
+in both directions. TD11 observed busy `$00/$00`, then ready `$80/$80` through
+A/B for program and chip erase; TD6 had the same busy/ready pairs. TD12 read
+`$A5/$5A/$A5/$5A` at its four edge offsets. These are specific emulator-fixture
+observations; cross-window timing/status and DQ4 remain unresolved hardware
+questions. No new emulator bug appeared in this matrix.
+
+SHA-256 identifiers:
+
+- Default ROM: `60c5e5cb53c0efca2939c092fab835efbe336a4cd1049465ca5c0073007d0cd0`
+- Fixture ROM (both destructive and mGBA fixture flags): `8d38097e24beeff657f6cd9c87f683f9bb120dfc5853a66c7d972f59412fdd10`
+- `libmgba.so.0.11.0`: `4f1f2c68084400eaa544131bdc3b6b807a7f688e7edd8baf83d2fcabffb43f9d`
+- Temporary headless runner: `a7419c90007e521ad516951ac6896eaf5fb7d3948ce141a200397171ba262892`
+
+Runner source, build logs, stdout logs, 21-byte M6TS blocks, status snapshots,
+and initial/final sidecars are under `/tmp/mbc6-runtime-20261006`. All ROMs and
+saves used by the runner were disposable `/tmp` copies. No physical cartridge,
+valuable save, libmobile code, or GUI screenshot was involved. This result
+validates execution against the identified Linux mGBA core; hardware remains
+unvalidated.
+
+### Collaborator report: natural Net de Get local integration (2026-10-06)
+
+The collaborating mGBA task reports a complete local fixture route: original
+Net de Get ROM, loopback HTTP catalog/body, original ROM flash writer, BOX2
+launch, all eight PAD TEST inputs, exit, BOX1 relaunch, and persistence after
+reopening a fresh core. Its source documentation reports that the first 8 KiB
+matched the fixture payload and the rest of the flash array, hidden map and
+protection metadata remained unchanged. This was not independently executed
+in this Test ROM checkout; it is a report checked against mGBA's committed
+`doc/MBC6_FLASH.md` and `tools/mbc6/README.md`.
+
+The reusable local driver and documentation are present at mGBA commit
+`358230c82773aec67dff2995eb77fbd84f8ea8a2`. At report time, the new commit's
+Linux rebuild, 33-target CTest run and repeated integration/Test ROM runs were
+still pending. The Test ROM results above remain explicitly attributed to
+`4c8066be4` and library SHA-256
+`4f1f2c68084400eaa544131bdc3b6b807a7f688e7edd8baf83d2fcabffb43f9d`;
+committing a driver does not reattribute those earlier executions.
+
+This advances the earlier synthetic-only catalog/download report for the
+specific local fixture. Production deployment, arbitrary payload compatibility,
+physical cartridge behavior and other platform builds remain unvalidated.
+
+### Postcommit mGBA `358230c82` validation (2026-10-06)
+
+The mGBA collaborator completed a new Linux build and reran the same Test ROM
+artifacts after committing the portable integration driver. I checked its
+stdout logs, the build/CTest summary, the current library hash, and the OMM
+report `f468eb8c-52af-42f7-a6b1-d489cecfc732`; I did not launch these new runs
+myself. This closes the pending postcommit validation noted above.
+
+Both Test ROM logs identify `0.11-feature/mbc6-complete-9339-358230c82`, full
+commit `358230c82773aec67dff2995eb77fbd84f8ea8a2`. The new library SHA-256 is
+`ee5795ed0eee7e0c4bd724dd73c490011d74e50af7b7bc1fe48b1079f033a29e`.
+The default ROM returned 15 PASS / 0 FAIL / 0 SKIP / 5 INFO, checksum `$42`;
+the marker fixture returned 22 PASS / 0 FAIL / 0 SKIP / 10 INFO, checksum `$4E`.
+Both checksums were valid, first-failure ID was `$FF`, T30 was PASS and T35
+was INFO with raw `$80`. The collaborator reports runner exit 0 for both.
+The logs are `/tmp/mbc6-runtime-20261006/postcommit-358230-default.log` and
+`postcommit-358230-marker.log`. The ROM hashes remain the default/fixture
+hashes recorded above; the protection=1 and no-marker runs above retain their
+original `4c8066be4` provenance.
+
+The build log `/tmp/mgba-mbc6-358230-linux-build.log` reports all 33 CTest
+targets passed with Qt offscreen. The collaborator also reports that the
+portable natural local integration and fresh-core reopening passed on this
+new build. Both `/tmp/mgba-netdeget-local-scaagyaa/run.log` and
+`reopened/run.log` print the new commit/version; the complete result/assertions
+are recorded in mGBA's OMM report and committed integration documentation.
+Only the Linux release was refreshed according to the collaborator. These
+remain emulator/local-fixture results; production deployment, arbitrary
+minigame compatibility and hardware validation are not established.
+
+
+### Integrated offline install/execute/reopen fixture (2026-10-06)
+
+Added an opt-in workflow in `src/tests_netdeget.asm`, centralized A-only
+command helpers in `src/flash.asm`, and a reusable Linux headless runner in
+`tools/run_mgba_offline.py` / `tools/mgba_offline_runner.c`. The procedure,
+source qualification and separate M6OF ABI are in
+[net-de-get-offline.md](net-de-get-offline.md). It requires both destructive
+flags plus `ENABLE_NETDEGET_OFFLINE_FIXTURE=1` and the exact hidden-map marker
+`M6OFFLINEFIXTURE`. The safe build contains none of the offline workflow.
+This is original generated homebrew data, not distributed Net de Get content.
+
+The workflow erases/checks sector 7, stages two 4 KiB WRAM buffers, programs
+64 aligned pages into flash bank 112, checks every page and all 8 KiB through
+A/B, compares 16-bit sums, executes a two-receipt RET payload, restores ROM
+banks/sources A=2/B=3 and WRAM bank1, and verifies ROM signatures. A valid prior
+completed record selects read/execute-only reopening. Polls are bounded and
+raw busy/ready values remain observational. The post-ready single F0 follows
+the host writer; failure recovery retains Iceboy's complete Flash_Reset.
+The payload sum is a fixture sum, not Net de Get's header checksum algorithm.
+
+Direct final precommit execution used normal ROM boot and joypad confirmation
+against mGBA `0.11-feature/mbc6-complete-9339-358230c82`, commit
+`358230c82773aec67dff2995eb77fbd84f8ea8a2`, Linux library SHA-256
+`ee5795ed0eee7e0c4bd724dd73c490011d74e50af7b7bc1fe48b1079f033a29e`.
+The Test ROM was built from the shared dirty `411BA0B+` checkout:
+
+- ROM: `3dbd500572964f013ec1f59e3cece672ac78bdbfad6680b0bd58c6d5a4773015`.
+- Symbols: `b9257fe8c7aadf8f485a47b82389cd298460903fbccff51d0b022b1e269b16e6`.
+- Payload: `e01aa1697dd91be764bee8a40862ca400b41a1a71799dde3ecd2815efa581390`.
+- Installed/reopened full flash sidecar:
+  `be1047b6a1257e84dd3959b8fe2710951c564e553e92a18d996abb4d221f5b43`.
+
+| Case | Frames | Offline verdict | Written pages | Evidence |
+|---|---:|---|---:|---|
+| Install | 1184 | PASS, phase7/mode1 | 64 | Full payload and erased sector tail match; seven other sectors, hidden map and protection metadata unchanged; receipts A6/5A, both sums62057, ROM signatures restored. |
+| Fresh-core reopen | 1130 | PASS, phase7/mode2 | 0 | Same payload execution and full byte-identical sidecar. |
+| SELECT cancel | 1130 | NOT RUN in transient WRAM/UI | 0 | Poisoned transient result initialized; done0/page3; previous SRAM M6OF receipt and complete sidecar preserved. |
+| Invalid prior record | 1130 | FAIL, phase2/mode2 | 0 | Prior phase6 with a valid recalculated checksum rejected; full installed sidecar unchanged. |
+| No hidden marker | 1130 | SKIP, phase1/mode0 | 0 | No erase/program/execute; entire initial sidecar unchanged. |
+| Corrupted reopen | 1130 | FAIL, phase5/mode2 | 0 | Offset0100 expected5B/actual5A; no retry, repair or payload execution; entire injected sidecar unchanged. |
+
+All six runner processes exited0 and all **56 assertions passed**. Each safe
+M6TS block retained format2/suite3, 15 PASS / 0 FAIL / 0 SKIP / 5 INFO,
+checksum42. WRAM bank readback was1 in all cases. The persisted PASS receipt
+in the cancel case belongs to the previous run; the current session's WRAM
+result is NOT RUN. Evidence is `/tmp/mbc6-offline-lbtj3eau/report.json` and its
+ROM/symbol snapshots, logs, M6TS/M6OF/WRAM records and complete flash/SRAM files.
+The runner subagent independently passed the same 56 checks in
+`/tmp/mbc6-offline-ig86n0yk/report.json`.
+
+Read-only review found and corrected two issues before this final run:
+initialize the offline result before confirmation to prevent a stale PASS on
+cancel, and validate prior receipt semantics (phase/mode/pages/receipts,
+restoration/marker, reserved bytes and sums) beyond its checksum. The mGBA
+collaborator's earlier cross-check passed the initial ROM revision
+`8f5717cd7866afc58dd10b51f26b274e25d25217618f33666592fdb08e6ddff1`
+in `/tmp/mbc6-offline-9m__e00v/report.json`; that result predates these fixes
+and must not be presented as a check of the final revision.
+
+Build/static verification passed for safe, ordinary fixture and offline
+configurations. At the same build ID, safe ROM SHA60c5e5cb... and ordinary
+fixture SHA8d38097e... remain the exact artifacts recorded above. A commit's
+new diagnostic build ID changes rebuilt ROM hashes; use the runner's input
+hashes for any later checkpoint run. No new mGBA core defect was observed.
+No hardware, physical power-cycle, network installation, original-game checksum
+or arbitrary minigame compatibility is established by this fixture.

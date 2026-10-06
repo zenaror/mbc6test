@@ -1,5 +1,5 @@
 ; Text UI: CGB palette/tilemap setup, an original 5x7 font loader, a
-; plain string printer, and a 3-page results viewer (all 29 tests'
+; plain string printer, and a 3-page results viewer (all 32 tests'
 ; PASS/FAIL/SKIP/INFO status, a detailed first-failure page, and an
 ; INFO/experimental page) with A-button paging. This is the ROM's only
 ; way to show its own results — docs/project-rules.md requires the detail to be
@@ -333,7 +333,7 @@ StatusToTile:
     ret
 
 ; --- ComputeGridDest ---
-; Input: wGridIndex (0-25). Output: de = tilemap address for that
+; Input: wGridIndex (0-31). Output: de = tilemap address for that
 ; entry's 3-char name + ':' + status glyph (6-tile slot), 3 slots per
 ; row starting at row 2, 6 tiles per slot.
 ComputeGridDest:
@@ -419,7 +419,7 @@ DrawResultsGrid:
 
     call BuildSummaryLine
     ld hl, wSummaryLineBuf
-    ld de, _SCRN0 + 12 * SCRN_WIDTH + 0
+    ld de, _SCRN0 + 13 * SCRN_WIDTH + 0
     call PrintString
 
     ld hl, HintNextText
@@ -442,6 +442,7 @@ TestShortNames:
     db "T30","T31","T32","T33","T34","T35"
     db "EX1","EX2"
     db "TD1","TD2","TD3","TD4","TD5","TD6","TD7","TD8","TD9"
+    db "D10","D11","D12" ; fixture-only TD10-TD12, abbreviated to fit the grid
 
 ; --- DrawFailurePage ---
 ; Detailed first-failure record, or a "no failures" message.
@@ -517,10 +518,9 @@ LabelActual:
     db "ACTUAL  = $", 0
 
 ; --- DrawInfoPage ---
-; INFO/experimental observations: T34's hidden-region checksum, T35's
-; observed sector-0 status byte, EX01's first bytes at bank $FF, and
-; EX02's ROM-vs-other outcome flag. None of these are PASS/FAIL —
-; docs/project-rules.md "Undefined / experimental behavior".
+; INFO/experimental observations: source-supported observations plus
+; fixture-only cross-window, flash-status and page-edge snapshots. TD10-TD12
+; stay INFO-only; TD6 is fixture-gated command conformance and can PASS/FAIL.
 DrawInfoPage:
     call UI_Init
     ld hl, InfoTitleText
@@ -534,16 +534,16 @@ DrawInfoPage:
     call PrintHexByte
 
     ld hl, LabelT35
-    ld de, _SCRN0 + 4 * SCRN_WIDTH + 0
+    ld de, _SCRN0 + 3 * SCRN_WIDTH + 0
     call PrintString
-    ld a, [wSector0StatusByte]
+    ld a, [wSector0ProtectionStatus]
     call PrintHexByte
 
     ld hl, LabelEx1
-    ld de, _SCRN0 + 6 * SCRN_WIDTH + 0
+    ld de, _SCRN0 + 4 * SCRN_WIDTH + 0
     call PrintString
     ld hl, wEx01Observed
-    ld de, _SCRN0 + 7 * SCRN_WIDTH + 1
+    ld de, _SCRN0 + 5 * SCRN_WIDTH + 1
     ld b, 4
 .ex1Loop:
     push bc
@@ -559,13 +559,13 @@ DrawInfoPage:
     jr nz, .ex1Loop
 
     ld hl, LabelEx2
-    ld de, _SCRN0 + 9 * SCRN_WIDTH + 0
+    ld de, _SCRN0 + 6 * SCRN_WIDTH + 0
     call PrintString
     ld a, [wEx02Observed]
     call PrintHexByte
 
     ld hl, LabelTD9
-    ld de, _SCRN0 + 11 * SCRN_WIDTH + 0
+    ld de, _SCRN0 + 7 * SCRN_WIDTH + 0
     call PrintString
     ld a, [wTestStatus + T_TD9]
     cp RESULT_INFO
@@ -579,33 +579,171 @@ DrawInfoPage:
     call PrintHexByte
     jr .td9Done
 .td9NotRun:
-    ld a, $0D             ; '-' tile index
-    ld [de], a
-    inc de
-    ld [de], a
+    ld hl, InfoNotRunPair
+    ld b, 5
+    call PrintFixedChars
 .td9Done:
 
-    ld hl, HintBackText
+    ld hl, LabelTD10AB
+    ld de, _SCRN0 + 8 * SCRN_WIDTH + 0
+    call PrintString
+    ld a, [wTestStatus + T_TD10]
+    cp RESULT_INFO
+    jr nz, .td10ABNotRun
+    ld hl, wTD10IDABManufacturer
+    call DrawInfoPair
+    jr .td10BADone
+.td10ABNotRun:
+    ld hl, InfoNotRunPair
+    ld b, 5
+    call PrintFixedChars
+.td10BADone:
+    ld hl, LabelTD10BA
+    ld de, _SCRN0 + 9 * SCRN_WIDTH + 0
+    call PrintString
+    ld a, [wTestStatus + T_TD10]
+    cp RESULT_INFO
+    jr nz, .td10BANotRun
+    ld hl, wTD10IDBAManufacturer
+    call DrawInfoPair
+    jr .td10Done
+.td10BANotRun:
+    ld hl, InfoNotRunPair
+    ld b, 5
+    call PrintFixedChars
+.td10Done:
+
+    ld hl, LabelTD11ProgramBusy
+    ld de, _SCRN0 + 10 * SCRN_WIDTH + 0
+    call PrintString
+    ld hl, wTD11ProgramBusyA
+    call DrawTD11Pair
+    ld hl, LabelTD11ProgramReady
+    ld de, _SCRN0 + 11 * SCRN_WIDTH + 0
+    call PrintString
+    ld hl, wTD11ProgramReadyA
+    call DrawTD11Pair
+    ld hl, LabelTD11ChipBusy
+    ld de, _SCRN0 + 12 * SCRN_WIDTH + 0
+    call PrintString
+    ld hl, wTD11ChipBusyA
+    call DrawTD11Pair
+    ld hl, LabelTD11ChipReady
+    ld de, _SCRN0 + 13 * SCRN_WIDTH + 0
+    call PrintString
+    ld hl, wTD11ChipReadyA
+    call DrawTD11Pair
+
+    ld hl, LabelTD12First
     ld de, _SCRN0 + 14 * SCRN_WIDTH + 0
     call PrintString
+    ld a, [wTestStatus + T_TD12]
+    cp RESULT_INFO
+    jr nz, .td12FirstNotRun
+    ld hl, wTD12Edge0
+    call DrawInfoPair
+    jr .td12Last
+.td12FirstNotRun:
+    ld hl, InfoNotRunPair
+    ld b, 5
+    call PrintFixedChars
+.td12Last:
+    ld hl, LabelTD12Last
+    ld de, _SCRN0 + 15 * SCRN_WIDTH + 0
+    call PrintString
+    ld a, [wTestStatus + T_TD12]
+    cp RESULT_INFO
+    jr nz, .td12LastNotRun
+    ld hl, wTD12EdgeLast0
+    call DrawInfoPair
+    jr .td12Done
+.td12LastNotRun:
+    ld hl, InfoNotRunPair
+    ld b, 5
+    call PrintFixedChars
+.td12Done:
+
+IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS && DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+    ld hl, LabelTD6Ready
+    ld de, _SCRN0 + 16 * SCRN_WIDTH + 0
+    call PrintString
+    ld a, [wTestStatus + T_TD6]
+    cp RESULT_PASS
+    jr nz, .td6NotRun
+    ld hl, wTD6StatusReadyA
+    call DrawInfoPair
+    jr .td6Done
+.td6NotRun:
+    ld hl, InfoNotRunPair
+    ld b, 5
+    call PrintFixedChars
+.td6Done:
+ENDC
+
     call PrintBuildID
     call UI_TurnOn
     ret
 
+; Input: HL points to two bytes; DE is the tilemap destination.
+; Prints `XX/YY` and advances DE by five cells.
+DrawInfoPair:
+    push hl
+    ld a, [hl]
+    call PrintHexByte
+    pop hl
+    inc hl
+    ld a, $0F             ; '/' tile index
+    ld [de], a
+    inc de
+    ld a, [hl]
+    call PrintHexByte
+    ret
+
+; Draw a status pair only after TD11 actually ran.
+DrawTD11Pair:
+    ld a, [wTestStatus + T_TD11]
+    cp RESULT_INFO
+    jr nz, .notRun
+    jp DrawInfoPair
+.notRun:
+    ld hl, InfoNotRunPair
+    ld b, 5
+    jp PrintFixedChars
+
 InfoTitleText:
-    db "INFO / EXPERIMENTAL", 0
+    db "INFO / A: NEXT", 0
 LabelT34:
     db "T34 HIDDEN CKSM=$", 0
 LabelT35:
-    db "T35 SECTOR0 ST =$", 0
+    db "T35 SEC0 WP=$", 0
 LabelEx1:
     db "EX1 BANK $FF DATA:", 0
 LabelEx2:
     db "EX2 C6ROMFLAG =$", 0
 LabelTD9:
     db "TD9 MAP A/B=$", 0
-HintBackText:
-    db "A:BACK TO RESULTS", 0
+LabelTD10AB:
+    db "TD10 A>B:$", 0
+LabelTD10BA:
+    db "TD10 B>A:$", 0
+LabelTD11ProgramBusy:
+    db "P0 A/B:$", 0
+LabelTD11ProgramReady:
+    db "P1 A/B:$", 0
+LabelTD11ChipBusy:
+    db "C0 A/B:$", 0
+LabelTD11ChipReady:
+    db "C1 A/B:$", 0
+LabelTD12First:
+    db "TD12 0/7F:$", 0
+LabelTD12Last:
+    db "TD12 END:$", 0
+IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS && DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+LabelTD6Ready:
+    db "TD6 RDY A/B=$", 0
+ENDC
+InfoNotRunPair:
+    db "--/--"
 
 ; --- UI_ResultsLoop ---
 ; Cycles through the results grid, failure detail, and INFO pages on
@@ -615,11 +753,20 @@ HintBackText:
 DEF PAGE_RESULTS EQU 0
 DEF PAGE_FAILURE EQU 1
 DEF PAGE_INFO EQU 2
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+DEF PAGE_OFFLINE EQU 3
+DEF PAGE_COUNT EQU 4
+ELSE
 DEF PAGE_COUNT EQU 3
+ENDC
 
 EXPORT UI_ResultsLoop
 UI_ResultsLoop:
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+    ld a, PAGE_OFFLINE ; separate workflow verdict, not a safe-suite PASS
+ELSE
     xor a
+ENDC
     ld [wCurrentPage], a
     ; Seed wPrevJoypad from a real read, not 0 — if the player is still
     ; physically holding A on entry (quite likely right after holding
@@ -640,6 +787,13 @@ UI_ResultsLoop:
     call DrawFailurePage
     jr .waitInput
 .showInfoPage:
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+    cp PAGE_OFFLINE
+    jr nz, .ordinaryInfo
+    call DrawOfflinePage
+    jr .waitInput
+.ordinaryInfo:
+ENDC
     call DrawInfoPage
 .waitInput:
     call WaitFrame
@@ -743,6 +897,28 @@ UI_ConfirmDestructive:
     ret
 
 WarnText1:
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+    db "OFFLINE FIXTURE", 0
+WarnText2:
+    db "SECTOR 7 ERASE", 0
+WarnText3:
+    db "FLASH - USE COPY", 0
+WarnText4:
+    db "HOLD A+B+START", 0
+WarnText5:
+    db "SELECT=CANCEL", 0
+ELSE
+IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+    db "MGBA FIXTURE BUILD", 0
+WarnText2:
+    db "MAP & CHIP ERASE", 0
+WarnText3:
+    db "FLASH - USE COPY", 0
+WarnText4:
+    db "HOLD A+B+START", 0
+WarnText5:
+    db "SELECT=CANCEL", 0
+ELSE
     db "DESTRUCTIVE TESTS", 0
 WarnText2:
     db "MAY PERMANENTLY", 0
@@ -752,5 +928,68 @@ WarnText4:
     db "HOLD A+B+START", 0
 WarnText5:
     db "SELECT=CANCEL", 0
+ENDC
+ENDC
 
+ENDC
+
+IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+DrawOfflinePage:
+    call UI_Init
+    ld hl, OfflineTitle
+    ld de, _SCRN0 + SCRN_WIDTH
+    call PrintString
+    ld hl, OfflineStatusLabel
+    ld de, _SCRN0 + 3 * SCRN_WIDTH
+    call PrintString
+    ld a, [wOfflineStatus]
+    or a
+    ld hl, OfflineNotRunText
+    jr z, .status
+    dec a
+    ld hl, OfflinePassText
+    jr z, .status
+    dec a
+    ld hl, OfflineFailText
+    jr z, .status
+    ld hl, OfflineSkipText
+.status:
+    call PrintString
+    ld hl, OfflineModeLabel
+    ld de, _SCRN0 + 5 * SCRN_WIDTH
+    call PrintString
+    ld a, [wOfflineMode]
+    call PrintHexByte
+    ld hl, OfflinePhaseLabel
+    ld de, _SCRN0 + 7 * SCRN_WIDTH
+    call PrintString
+    ld a, [wOfflinePhase]
+    call PrintHexByte
+    ld hl, OfflinePagesLabel
+    ld de, _SCRN0 + 9 * SCRN_WIDTH
+    call PrintString
+    ld a, [wOfflinePages]
+    call PrintHexByte
+    ld hl, OfflineReceiptLabel
+    ld de, _SCRN0 + 11 * SCRN_WIDTH
+    call PrintString
+    ld a, [wOfflineReceiptA]
+    call PrintHexByte
+    ld a, [wOfflineReceiptB]
+    call PrintHexByte
+    ld hl, HintNextText
+    ld de, _SCRN0 + 14 * SCRN_WIDTH
+    call PrintString
+    call PrintBuildID
+    jp UI_TurnOn
+OfflineTitle: db "OFFLINE INSTALL", 0
+OfflineStatusLabel: db "RESULT: ", 0
+OfflinePassText: db "PASS", 0
+OfflineFailText: db "FAIL", 0
+OfflineSkipText: db "SKIP", 0
+OfflineNotRunText: db "NOT RUN", 0
+OfflineModeLabel: db "MODE $", 0
+OfflinePhaseLabel: db "PHASE $", 0
+OfflinePagesLabel: db "PAGES $", 0
+OfflineReceiptLabel: db "EXEC $", 0
 ENDC

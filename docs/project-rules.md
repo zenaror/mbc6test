@@ -19,6 +19,10 @@ The target platform is **CGB only**. Do not spend implementation effort on DMG, 
 
 ## Required references
 
+See [`mbc6-reference.md`](mbc6-reference.md) for a consolidated, reusable
+technical overview of the MBC6 mapper and Net de Get flash. This file remains
+the source of project-specific implementation and testing rules.
+
 ### MBC6-specific references
 
 Before changing mapper or flash behavior, consult the relevant source:
@@ -253,8 +257,11 @@ Important constraints:
 - Flash sectors are 128 KiB; there are 8 sectors.
 - A hidden 256-byte region exists.
 - program operations use 128-byte aligned buffered writes.
-- status bit 7 indicates completion.
-- status bit 4 indicates timeout.
+- status bit 7 indicates completion/ready.
+- Net de Get appears to check status bit 4 as a timeout flag (Dan Docs
+  reverse-engineering); iceboy records bits 5–4 as driven but unknown, observed
+  low. Do not make bit 4 a normative hardware requirement without better
+  evidence.
 - Flash Write Enable / WP protects sector 0 and the hidden region, not sectors 1-7.
 
 Do not model `$1000` as a generic global write-enable bit.
@@ -280,7 +287,11 @@ Use a symbol such as:
 ENABLE_DESTRUCTIVE_FLASH_TESTS = 0
 ```
 
-When disabled, erase/program/protect/unprotect code must not be reachable from the default UI.
+When disabled, no persistent erase/program/protect/unprotect operation may be
+triggerable from the default UI. T35 is the documented read-only exception:
+it enters program/status mode only to sample protection bit 1, writes no buffer
+payload, never repeats a buffer slot to trigger programming, and immediately
+uses `Flash_Reset` to abort. Keep this sequence centralized in `src/flash.asm`.
 
 When enabled:
 
@@ -290,6 +301,22 @@ When enabled:
 - assume disposable emulator/flash state, not that arbitrary original data can be restored.
 
 A 128 KiB sector cannot be fully backed up into 32 KiB SRAM, so do not claim automatic rollback of arbitrary real-cartridge flash contents.
+
+### Disposable mGBA flash fixtures
+
+TD6 hidden-map erase/program and the additional cross-window/status/page-edge
+observations TD10–TD12 are compiled only when both
+`ENABLE_DESTRUCTIVE_FLASH_TESTS=1` and `ENABLE_MGBA_FLASH_FIXTURE_TESTS=1` are
+set. TD11 issues a whole-chip erase; iceboy documents the mass-erase sequence,
+but the ROM keeps it fixture-only. TD6 first requires the exact 16-byte
+hidden-map marker `M6TD6FIXTUREONLY` at offsets `$F0-$FF`; without it, TD6
+records SKIP before issuing any hidden-map command. The marker is a fixture
+gate, not a hardware detector. The second flag is a build-time fixture fence:
+use a disposable ROM copy and save directory in mGBA, never a physical
+cartridge or valuable save. The default and ordinary destructive builds omit
+the hidden-map/whole-chip helpers; ordinary destructive TD6 is an explicit
+SKIP. TD10–TD12 remain INFO observations where source does not specify
+cross-window behavior.
 
 Prefer sector 7 for destructive fixture tests by convention, but still label it destructive.
 
@@ -435,6 +462,15 @@ A mapper/test change is not done until:
 7. the final response states what runtime behavior still needs to be checked in BGB/other emulators or hardware.
 
 Runtime results from the user or emulator developer are evidence to iterate on the tests; do not rewrite expected hardware behavior merely to make a particular emulator pass.
+
+## Fixture offline integrada
+
+`ENABLE_NETDEGET_OFFLINE_FIXTURE=1` exige as duas flags destrutivas e seleciona
+uma sequência própria no lugar de TD1-TD12, preservando o payload para reopen.
+Exige o marcador hidden-map `M6OFFLINEFIXTURE` antes de erase/program. Use só
+arquivos descartáveis do mGBA em `/tmp`. A sequência, o runner e o anexo M6OF
+estão em [net-de-get-offline.md](net-de-get-offline.md). Não muda a ABI M6TS
+nem transforma timing/status observado no emulador em regra de hardware.
 
 ## Memória compartilhada OMM
 
