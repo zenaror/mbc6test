@@ -15,6 +15,12 @@ its host runner checks fresh-core persistence and negative cases. It is selected
 with `ENABLE_NETDEGET_OFFLINE_FIXTURE=1` in addition to both destructive flags
 and replaces TD1-TD12. It has its own M6OF annex, not a new M6TS test ID.
 
+A separate exploratory [flash latch fixture](flash-latch-fixture.md), selected
+by `ENABLE_FLASH_LATCH_FIXTURE=1` plus both destructive flags, records erase-B
+reads before/after a flash enable cycle as INFO in an M6FL annex. It replaces
+TD1-TD12 and cannot be combined with the offline fixture; its raw reads are
+not normative PASS/FAIL expectations.
+
 | ID | Name | Class | Behavior tested | Authoritative source | Expected result | Status |
 |----|------|-------|------------------|----------------------|------------------|--------|
 | T00 | Startup/header sanity | Safe | Displays ROM/test-suite version; no runtime expectation | N/A (build-time verifier is authoritative for header bytes) | INFO always | Implemented |

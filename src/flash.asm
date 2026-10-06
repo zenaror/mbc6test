@@ -519,6 +519,64 @@ Flash_StartProgramBufferEdges:
     ret
 ENDC
 
+IF DEF(ENABLE_FLASH_LATCH_FIXTURE) && ENABLE_FLASH_LATCH_FIXTURE
+    ASSERT ENABLE_DESTRUCTIVE_FLASH_TESTS && ENABLE_MGBA_FLASH_FIXTURE_TESTS
+SECTION "Latch observation flash helpers", ROM0
+; B-only sector erase, intentionally no reset/remap on return.
+; Caller checks marker and polls HL=$6000, then writes F0 to that same
+; address after ready. This isolates the post-erase bank selection state.
+Flash_LatchStartEraseB::
+    call Flash_SelectCommandWindows
+    call Flash_LatchUnlockB
+    ld a, $80
+    ld [$7555], a
+    call Flash_LatchUnlockB
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankB
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, $30
+    ld [$6000], a
+    ld hl, $6000
+    ret
+Flash_LatchUnlockB:
+    ld a, 2
+    call MBC6_SetROMBankB
+    ld a, FLASH_CMD_UNLOCK1
+    ld [$7555], a
+    ld a, 1
+    call MBC6_SetROMBankB
+    ld a, FLASH_CMD_UNLOCK2
+    ld [$6AAA], a
+    ld a, 2
+    jp MBC6_SetROMBankB
+
+; Host-style disable/enable register cycle; no flash opcode or reset.
+; Pulse WE around 0C00 each time, leaving it low. This entire sequence
+; is the experimental variable; no individual register lifetime asserted.
+Flash_LatchCycleEnable::
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    call MBC6_DisableFlash
+    xor a
+    ld [MBC6_REG_FLASH_WE], a
+    inc a
+    ld [MBC6_REG_FLASH_WE], a
+    call MBC6_EnableFlash
+    xor a
+    ld [MBC6_REG_FLASH_WE], a
+    ret
+; Accepted new opcode control without another enable cycle. Exit ID with
+; one F0, then caller remaps B to the observation bank and reads array.
+Flash_LatchIDResetB::
+    call Flash_LatchUnlockB
+    ld a, FLASH_CMD_AUTOSELECT
+    ld [$7555], a
+    ld a, FLASH_CMD_RESET
+    ld [$6000], a
+    ret
+ENDC
+
 SECTION "Flash Destructive Helpers WRAM", WRAM0
 wEraseTargetBank: db
 wProgramTargetBank: db

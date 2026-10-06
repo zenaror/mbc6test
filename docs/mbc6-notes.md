@@ -673,3 +673,58 @@ plus a separate saved C PAD offline check. Those platform builds and that
 original-game check were not executed in this Test ROM chat. Passing this
 Linux fixture does not validate execution on those platforms or hardware.
 No new core defect or Test ROM source change was needed for this recheck.
+
+
+### Erase-bank latch enable-cycle investigation (2026-10-06)
+
+Prepared a separate INFO fixture and Linux runner on branch
+`codex/flash-enable-latch-observation`, based on main70e44e9. It requires both
+existing destructive flags plus `ENABLE_FLASH_LATCH_FIXTURE=1`, the hidden
+marker `M6LATCHFIXTUREON`, and is mutually exclusive with the install/reopen
+workflow. The M6FL32-byte annex at bank7BF60 leaves the M6TS/M6OF layouts
+unchanged. See [flash-latch-fixture.md](flash-latch-fixture.md) for register
+sequence, commands, ABI, hashes and differential results.
+
+The installed release and experimental candidate each passed21 fixture
+integrity checks with a completed INFO observation. The old core retained
+B FF/FF both continuously-enabled and after enable cycling; the candidate
+retained continuous FF/FF but returned mapped bank96 A5/C3 after cycling.
+A controls remained A5/C3; a new90/F0 control returned B A5/C3 in both.
+The sector7 erase and preservation of every other sidecar byte passed, and
+no-marker fixtures skipped without modifying flash. Reports:
+`/tmp/mbc6-latch-njx20t7c/report.json` (installed release) and
+`/tmp/mbc6-latch-9ekuuow8/report.json` (candidate). No emulator source or release
+artifact was edited by this Test ROM investigation.
+
+The frozen released Test ROM25c8627 artifacts were also checked against the
+candidate librarySHA0122452480576dd1942e932523f30a3e95ddc288fc94906184e1fe2b3fe8fbbc,
+embedded `0.11-feature/full_server-9341-ed393f522-dirty`,
+`ed393f52297dbab765ea8634742b2173baa1777d-dirty`. Do not attribute this modified
+core to a clean commit. The offline ROMbb1470e98f385ec255404b645acefa113013673ff83f014770f9d35afd5b2d79
+passed all56 assertions/six cases in `/tmp/mbc6-offline-dccldju3/report.json`.
+
+A separate runner subagent executed the four legacy cases below; I inspected
+its full JSON, stdout and saved results. Report:
+`/tmp/mbc6-runtime-20261006/candidate-latch-evidence-863bc7bab7/report.json`,
+SHA-256 `2373b69ed61c44ca3946f49de9bf6da9cde3112b938ad50e770d3ffed032a4f3`.
+
+| Frozen25c8627 case | PASS/FAIL/SKIP/INFO | T35 raw | Evidence |
+|---|---|---|---|
+| Safe, protected0 | 15/0/0/5 | 80 | ValidM6TS, T30PASS, complete sidecar unchanged. |
+| Safe, protected1 | 15/0/0/5 | 82 | Same, protection bit observed without changing flash. |
+| Full disposable fixture, marker | 22/0/0/10 | 80 | ValidM6TS, zeroFAIL, all gated cases completed. |
+| Full disposable fixture, no marker | 21/0/1/10 | 80 | ValidM6TS, TD6SKIP, zeroFAIL. |
+
+Safe ROM SHA3af8f367ace7139ff2573a1ffcaf5b66626ffb96cee49c8c0f169d297dbdf437
+and fixture ROM SHA9496edb9cfcc48f7a45e22c59bd661192b4ed133b011e9fe7c84323717496747
+are the original postcommit25c8627 builds, not artifacts rebuilt from this
+investigation branch. Candidate HEAD wased393f522 with modifications in
+src/gb/mbc/mbc.c and src/gb/test/mbc.c, as recorded by that runner.
+
+Build/static verification passed for the branch's safe, classic fixture,
+offline and new latch configurations. The branch's original offline workflow
+also passed56 checks against the installed ed393f522 library in
+`/tmp/mbc6-offline-2taumykl/report.json`; its ROM SHA1e50d2516c8385c6c4a7bb6e93ffd403f038ca08835df029ccf2a2cb4fd8da6d
+has diagnostic buildID70E44E9+, distinct from the frozen25c8627 artifact.
+No latch read value was promoted to a hardware requirement. Original-game
+maintenance traces and physical latch lifetime remain separate evidence.
