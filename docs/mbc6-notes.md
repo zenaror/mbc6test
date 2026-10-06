@@ -646,3 +646,30 @@ new diagnostic build ID changes rebuilt ROM hashes; use the runner's input
 hashes for any later checkpoint run. No new mGBA core defect was observed.
 No hardware, physical power-cycle, network installation, original-game checksum
 or arbitrary minigame compatibility is established by this fixture.
+
+
+### Installed Linux release recheck at mGBA `ed393f522` (2026-10-06)
+
+The mGBA collaborator reran the published Test ROM checkpoint `25c8627`
+against the Linux library copied from the installed release. Independent
+inspection of `/tmp/mbc6-offline-850l6akn/report.json` confirmed all six cases
+and 56 assertions passed, no errors, and each runner exited0. The embedded
+runtime identifies `0.11-feature/mbc6-complete-9341-ed393f522`, commit
+`ed393f52297dbab765ea8634742b2173baa1777d`; library SHA-256 is
+`d764a3ea9606d05c932e01b9dc7b2741a8edee87e89727c1adb8b55ad9578516`.
+The inspected copy is `/tmp/mgba-release-installed-verify/libmgba.so.0.11.0`.
+
+The exact Test ROM remains SHA-256
+`bb1470e98f385ec255404b645acefa113013673ff83f014770f9d35afd5b2d79`,
+symbols `b9257fe8c7aadf8f485a47b82389cd298460903fbccff51d0b022b1e269b16e6`,
+payload `e01aa1697dd91be764bee8a40862ca400b41a1a71799dde3ecd2815efa581390`.
+Install wrote64 pages, reopen wrote0; cancellation returned NOT RUN, the
+invalid prior record and corrupted flash returned FAIL without rewriting,
+and the missing marker returned SKIP. This is a new Linux release run;
+the earlier `358230c82` validation retains its original provenance.
+
+The collaborator reports completion and staging of the other platform builds,
+plus a separate saved C PAD offline check. Those platform builds and that
+original-game check were not executed in this Test ROM chat. Passing this
+Linux fixture does not validate execution on those platforms or hardware.
+No new core defect or Test ROM source change was needed for this recheck.
