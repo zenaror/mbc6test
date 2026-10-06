@@ -80,6 +80,7 @@ IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS
     call Test_TD6
     call Test_TD7
     call Test_TD8
+    call Test_TD9
 .skipDestructive:
 ENDC
 

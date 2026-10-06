@@ -15,6 +15,10 @@ wHiddenRegionChecksum:: db
 SECTION "T35 WRAM", WRAM0
 wSector0StatusByte:: db
 
+SECTION "TD9 WRAM", WRAM0
+wTD9HiddenAChecksum:: db
+wTD9HiddenBChecksum:: db
+
 SECTION "Flash Tests", ROM0
 
 ; --- Test_T30 --- ROM/Flash source selection isolation.

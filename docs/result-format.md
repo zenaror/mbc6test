@@ -20,25 +20,25 @@ and `$FFF`) T21-T24 exercise, though since the block is written last,
 any overlap would only ever show the final block contents, not corrupt
 an in-progress test.
 
-## Layout (20 bytes, all fixed offsets from the block base)
+## Layout (21 bytes, all fixed offsets from the block base)
 
 | Offset | Size | Field | Meaning |
 |--------|------|-------|---------|
 | 0 | 4 | magic | ASCII `"M6TS"` |
-| 4 | 1 | format_version | Layout version of this table; `1` |
-| 5 | 1 | suite_version | Test-suite version; `1` |
+| 4 | 1 | format_version | Layout version of this table; `2` |
+| 5 | 1 | suite_version | Test-suite version; `2` |
 | 6 | 1 | pass_count | Total PASS results |
 | 7 | 1 | fail_count | Total FAIL results |
 | 8 | 1 | skip_count | Total SKIP results |
 | 9 | 1 | info_count | Total INFO results |
-| 10 | 3 | failed_bitset | Bit `i` of byte `i/8` (LSB-first within each byte) set if test ID `i` FAILed. Covers test IDs 0-23; see `include/tests.inc` for the current ID assignment. |
-| 13 | 1 | first_fail_test_id | Test ID of the first FAIL this run, or `$FF` if none |
-| 14 | 1 | first_fail_bank | Bank number associated with the first failure |
-| 15 | 1 | first_fail_addr_hi | High byte of the address associated with the first failure |
-| 16 | 1 | first_fail_addr_lo | Low byte of the address associated with the first failure |
-| 17 | 1 | first_fail_expected | Expected byte at the first failure |
-| 18 | 1 | first_fail_actual | Actual byte at the first failure |
-| 19 | 1 | checksum | Sum of bytes 0-18, mod 256 |
+| 10 | 4 | failed_bitset | Bit `i` of byte `i/8` (LSB-first within each byte) set if test ID `i` FAILed. Covers test IDs 0-31; see `include/tests.inc` for the current ID assignment. |
+| 14 | 1 | first_fail_test_id | Test ID of the first FAIL this run, or `$FF` if none |
+| 15 | 1 | first_fail_bank | Bank number associated with the first failure |
+| 16 | 1 | first_fail_addr_hi | High byte of the address associated with the first failure |
+| 17 | 1 | first_fail_addr_lo | Low byte of the address associated with the first failure |
+| 18 | 1 | first_fail_expected | Expected byte at the first failure |
+| 19 | 1 | first_fail_actual | Actual byte at the first failure |
+| 20 | 1 | checksum | Sum of bytes 0-19, mod 256 |
 
 If `fail_count` is 0, `first_fail_*` fields are all `$00` and
 `first_fail_test_id` is `$FF` (no failure).
