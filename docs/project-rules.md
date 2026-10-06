@@ -472,6 +472,14 @@ arquivos descartáveis do mGBA em `/tmp`. A sequência, o runner e o anexo M6OF
 estão em [net-de-get-offline.md](net-de-get-offline.md). Não muda a ABI M6TS
 nem transforma timing/status observado no emulador em regra de hardware.
 
+## Exploratory erase-bank latch fixture
+
+The exploratory `ENABLE_FLASH_LATCH_FIXTURE=1` requires both destructive
+fixture flags, excludes the offline workflow, and uses its own M6FL annex.
+It requires the hidden marker `M6LATCHFIXTUREON` before sector7 erase. Use only
+disposable `/tmp` mGBA copies. Raw post-erase/enable-cycle reads are INFO;
+do not invent a hardware expectation. See [flash-latch-fixture.md](flash-latch-fixture.md).
+
 ## Memória compartilhada OMM
 
 Consulte [OMM.md](../OMM.md) e pesquise na OMM pelo MCP, no escopo `mbc6test`, antes de repetir uma investigação. Os dados da OMM ficam só no `ai-omm-backup`, nunca neste repositório. Ao guardar uma descoberta útil, registre sua origem, versão e evidência. Ao encerrar uma sessão, atualize o handoff da OMM com o estado e a próxima ação.

@@ -753,7 +753,7 @@ InfoNotRunPair:
 DEF PAGE_RESULTS EQU 0
 DEF PAGE_FAILURE EQU 1
 DEF PAGE_INFO EQU 2
-IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+IF ENABLE_NETDEGET_OFFLINE_FIXTURE || ENABLE_FLASH_LATCH_FIXTURE
 DEF PAGE_OFFLINE EQU 3
 DEF PAGE_COUNT EQU 4
 ELSE
@@ -762,7 +762,7 @@ ENDC
 
 EXPORT UI_ResultsLoop
 UI_ResultsLoop:
-IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+IF ENABLE_NETDEGET_OFFLINE_FIXTURE || ENABLE_FLASH_LATCH_FIXTURE
     ld a, PAGE_OFFLINE ; separate workflow verdict, not a safe-suite PASS
 ELSE
     xor a
@@ -787,10 +787,14 @@ ENDC
     call DrawFailurePage
     jr .waitInput
 .showInfoPage:
-IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
+IF ENABLE_NETDEGET_OFFLINE_FIXTURE || ENABLE_FLASH_LATCH_FIXTURE
     cp PAGE_OFFLINE
     jr nz, .ordinaryInfo
+IF ENABLE_NETDEGET_OFFLINE_FIXTURE
     call DrawOfflinePage
+ELSE
+    call DrawLatchPage
+ENDC
     jr .waitInput
 .ordinaryInfo:
 ENDC
@@ -908,6 +912,17 @@ WarnText4:
 WarnText5:
     db "SELECT=CANCEL", 0
 ELSE
+IF ENABLE_FLASH_LATCH_FIXTURE
+    db "LATCH OBSERVATION", 0
+WarnText2:
+    db "SECTOR 7 ERASE", 0
+WarnText3:
+    db "FLASH - USE COPY", 0
+WarnText4:
+    db "HOLD A+B+START", 0
+WarnText5:
+    db "SELECT=CANCEL", 0
+ELSE
 IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
     db "MGBA FIXTURE BUILD", 0
 WarnText2:
@@ -928,6 +943,7 @@ WarnText4:
     db "HOLD A+B+START", 0
 WarnText5:
     db "SELECT=CANCEL", 0
+ENDC
 ENDC
 ENDC
 
@@ -992,4 +1008,68 @@ OfflineModeLabel: db "MODE $", 0
 OfflinePhaseLabel: db "PHASE $", 0
 OfflinePagesLabel: db "PAGES $", 0
 OfflineReceiptLabel: db "EXEC $", 0
+ENDC
+
+IF ENABLE_FLASH_LATCH_FIXTURE
+DrawLatchPage:
+    call UI_Init
+    ld hl, LatchTitle
+    ld de, _SCRN0 + SCRN_WIDTH
+    call PrintString
+    ld de, _SCRN0 + 3 * SCRN_WIDTH
+    ld a, [wLatchStatus]
+    ld hl, LatchNotRunText
+    or a
+    jr z, .status
+    ld hl, LatchFailText
+    dec a
+    jr z, .status
+    ld hl, LatchSkipText
+    dec a
+    jr z, .status
+    ld hl, LatchInfoText
+.status:
+    call PrintString
+    ld hl, LatchBaselineLabel
+    ld de, _SCRN0 + 5 * SCRN_WIDTH
+    call PrintString
+    ld a, [wLatchBaselineB05]
+    call PrintHexByte
+    ld a, [wLatchBaselineB44]
+    call PrintHexByte
+    ld hl, LatchContinuousLabel
+    ld de, _SCRN0 + 7 * SCRN_WIDTH
+    call PrintString
+    ld a, [wLatchContinuousB05]
+    call PrintHexByte
+    ld a, [wLatchContinuousB44]
+    call PrintHexByte
+    ld hl, LatchCycleLabel
+    ld de, _SCRN0 + 9 * SCRN_WIDTH
+    call PrintString
+    ld a, [wLatchCycledB05]
+    call PrintHexByte
+    ld a, [wLatchCycledB44]
+    call PrintHexByte
+    ld hl, LatchOpcodeLabel
+    ld de, _SCRN0 + 11 * SCRN_WIDTH
+    call PrintString
+    ld a, [wLatchNewOpcodeB05]
+    call PrintHexByte
+    ld a, [wLatchNewOpcodeB44]
+    call PrintHexByte
+    ld hl, HintNextText
+    ld de, _SCRN0 + 14 * SCRN_WIDTH
+    call PrintString
+    call PrintBuildID
+    jp UI_TurnOn
+LatchTitle: db "FLASH LATCH INFO", 0
+LatchNotRunText: db "NOT RUN", 0
+LatchFailText: db "OPERATION FAILED", 0
+LatchSkipText: db "SKIP - NO MARKER", 0
+LatchInfoText: db "OBSERVATION ONLY", 0
+LatchBaselineLabel: db "BASE B:$", 0
+LatchContinuousLabel: db "CONT B:$", 0
+LatchCycleLabel: db "CYCLE B:$", 0
+LatchOpcodeLabel: db "CMD B:$", 0
 ENDC

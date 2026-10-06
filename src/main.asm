@@ -73,12 +73,18 @@ IF DEF(ENABLE_DESTRUCTIVE_FLASH_TESTS) && ENABLE_DESTRUCTIVE_FLASH_TESTS
 IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
     call Offline_Init
 ENDC
+IF DEF(ENABLE_FLASH_LATCH_FIXTURE) && ENABLE_FLASH_LATCH_FIXTURE
+    call Latch_Init
+ENDC
     call UI_ConfirmDestructive
     jr c, .skipDestructive
 IF DEF(ENABLE_NETDEGET_OFFLINE_FIXTURE) && ENABLE_NETDEGET_OFFLINE_FIXTURE
     ; Dedicated install/reopen workflow: the ordinary destructive suite
     ; would erase the installed payload before reopening can verify it.
     call Test_NetDeGetOffline
+ELSE
+IF DEF(ENABLE_FLASH_LATCH_FIXTURE) && ENABLE_FLASH_LATCH_FIXTURE
+    call Test_FlashEnableLatch
 ELSE
     call Test_TD1
     call Test_TD2
@@ -93,6 +99,7 @@ IF DEF(ENABLE_MGBA_FLASH_FIXTURE_TESTS) && ENABLE_MGBA_FLASH_FIXTURE_TESTS
     call Test_TD10
     call Test_TD11
     call Test_TD12
+ENDC
 ENDC
 ENDC
 .skipDestructive:

@@ -45,6 +45,8 @@ and the [result format](docs/result-format.md) to decode SRAM output. These
 documents contain the public technical record; OMM access is not required.
 For the separate, opt-in install/execute/reopen fixture, see
 [offline Net de Get workflow](docs/net-de-get-offline.md).
+The separate [flash latch investigation](docs/flash-latch-fixture.md) records
+erase/remap/enable-cycle observations without defining hardware expectations.
 
 ## Target platform
 

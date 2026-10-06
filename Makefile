@@ -30,6 +30,18 @@ ENABLE_DESTRUCTIVE_FLASH_TESTS ?= 0
 # with a disposable emulator ROM/save (TD6 also requires its hidden-map marker).
 ENABLE_MGBA_FLASH_FIXTURE_TESTS ?= 0
 ENABLE_NETDEGET_OFFLINE_FIXTURE ?= 0
+ENABLE_FLASH_LATCH_FIXTURE ?= 0
+ifneq ($(filter 0 1,$(ENABLE_FLASH_LATCH_FIXTURE)),$(ENABLE_FLASH_LATCH_FIXTURE))
+$(error ENABLE_FLASH_LATCH_FIXTURE must be 0 or 1)
+endif
+ifeq ($(ENABLE_FLASH_LATCH_FIXTURE),1)
+ifneq ($(ENABLE_MGBA_FLASH_FIXTURE_TESTS),1)
+$(error ENABLE_FLASH_LATCH_FIXTURE=1 requires both destructive fixture flags)
+endif
+ifneq ($(ENABLE_NETDEGET_OFFLINE_FIXTURE),0)
+$(error Flash latch and offline workflow fixtures are mutually exclusive)
+endif
+endif
 ifneq ($(filter 0 1,$(ENABLE_NETDEGET_OFFLINE_FIXTURE)),$(ENABLE_NETDEGET_OFFLINE_FIXTURE))
 $(error ENABLE_NETDEGET_OFFLINE_FIXTURE must be 0 or 1)
 endif
@@ -66,7 +78,8 @@ OBJECTS := $(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.o,$(SOURCES))
 RGBASM_FLAGS := -I $(INC_DIR) -I $(SRC_DIR) \
                 -D ENABLE_DESTRUCTIVE_FLASH_TESTS=$(ENABLE_DESTRUCTIVE_FLASH_TESTS) \
                 -D ENABLE_MGBA_FLASH_FIXTURE_TESTS=$(ENABLE_MGBA_FLASH_FIXTURE_TESTS) \
-                -D ENABLE_NETDEGET_OFFLINE_FIXTURE=$(ENABLE_NETDEGET_OFFLINE_FIXTURE)
+                -D ENABLE_NETDEGET_OFFLINE_FIXTURE=$(ENABLE_NETDEGET_OFFLINE_FIXTURE) \
+                -D ENABLE_FLASH_LATCH_FIXTURE=$(ENABLE_FLASH_LATCH_FIXTURE)
 
 # Re-running `make` with a different ENABLE_DESTRUCTIVE_FLASH_TESTS
 # value than the previous build used must not silently reuse stale
@@ -74,7 +87,7 @@ RGBASM_FLAGS := -I $(INC_DIR) -I $(SRC_DIR) \
 # encodes the flag value; when it changes, the old stamp is removed
 # and the new (freshly-touched) one is newer than every existing .o,
 # forcing a full rebuild without requiring `make clean` first.
-FLAG_STAMP := $(BUILD_DIR)/.flags-$(ENABLE_DESTRUCTIVE_FLASH_TESTS)-$(ENABLE_MGBA_FLASH_FIXTURE_TESTS)-$(ENABLE_NETDEGET_OFFLINE_FIXTURE)
+FLAG_STAMP := $(BUILD_DIR)/.flags-$(ENABLE_DESTRUCTIVE_FLASH_TESTS)-$(ENABLE_MGBA_FLASH_FIXTURE_TESTS)-$(ENABLE_NETDEGET_OFFLINE_FIXTURE)-$(ENABLE_FLASH_LATCH_FIXTURE)
 
 .PHONY: all clean verify test generate .FORCE
 
