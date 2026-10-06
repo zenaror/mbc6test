@@ -1,9 +1,10 @@
 ; Non-destructive flash tests: T30-T35.
 ; See docs/test-matrix.md, docs/project-rules.md "Flash rules", and
 ; src/flash.asm for the command sequences (sourced from the iceboy NP
-; GB Memory documentation). None of these erase, program, protect, or
-; unprotect anything — see src/tests_flash_destructive.asm for the
-; compile-time-gated destructive suite.
+; GB Memory documentation). These tests never trigger a persistent
+; erase/program/protect/unprotect operation. T35 briefly enters program/status
+; mode but aborts before loading buffer data; see src/tests_flash_destructive.asm
+; for the compile-time-gated suite that can trigger persistent operations.
 
 INCLUDE "hardware.inc"
 INCLUDE "mbc6.inc"
@@ -13,22 +14,37 @@ SECTION "T34 WRAM", WRAM0
 wHiddenRegionChecksum:: db
 
 SECTION "T35 WRAM", WRAM0
-wSector0StatusByte:: db
+wSector0ProtectionStatus:: db
 
 SECTION "TD9 WRAM", WRAM0
 wTD9HiddenAChecksum:: db
 wTD9HiddenBChecksum:: db
 
+SECTION "TD10-TD12 Fixture WRAM", WRAM0
+wTD10IDABManufacturer:: db
+wTD10IDABDevice::       db
+wTD10IDBAManufacturer:: db
+wTD10IDBADevice::       db
+wTD11ProgramBusyA::     db
+wTD11ProgramBusyB::     db
+wTD11ProgramReadyA::   db
+wTD11ProgramReadyB::   db
+wTD11ChipBusyA::       db
+wTD11ChipBusyB::       db
+wTD11ChipReadyA::      db
+wTD11ChipReadyB::      db
+wTD12Edge0::            db
+wTD12Edge7F::           db
+wTD12EdgeLast0::        db
+wTD12EdgeLast127::      db
+
 SECTION "Flash Tests", ROM0
 
-; --- Test_T30 --- ROM/Flash source selection isolation.
-; Never reads flash contents (docs/project-rules.md: "Do not require any specific
-; initial flash contents"). Instead, uses known ROM bank signatures as
-; a witness: a window's ROM bank *number* register is only ever
-; written once here, so if that window still shows the same ROM
-; signature after the OTHER window's source is toggled ROM<->Flash
-; (repeatedly), neither the source select nor the bank number of the
-; untouched window was disturbed.
+; --- Test_T30 --- ROM/Flash source-latch isolation and bank retention.
+; Never asserts any flash contents. Toggle one source latch at a time and
+; check the opposite window's known ROM signature before touching its source.
+; The 16-byte signature detects cross-coupling unless flash happens to contain
+; the exact same signature at that mapped location.
 EXPORT Test_T30
 Test_T30:
     call MBC6_SelectROMA
@@ -47,16 +63,28 @@ Test_T30:
     call CheckBankSignatureAt
     jr c, .fail
 
-    ; Toggle A's source; B's bank register is never rewritten below.
+    ; A -> Flash must leave B's source and bank untouched.
     call MBC6_SelectFlashA
-    call MBC6_SelectFlashB
+    ld a, 20
+    ld de, WIN_B_SIG
+    call CheckBankSignatureAt
+    jr c, .fail
+
+    ; Restore A and verify its bank number was retained.
     call MBC6_SelectROMA
     ld a, 10
     ld de, WIN_A_SIG
-    call CheckBankSignatureAt       ; A's own bank survived its own toggles
+    call CheckBankSignatureAt
     jr c, .fail
 
-    ; B's source/bank must have survived A's toggling untouched.
+    ; B -> Flash must leave A's source and bank untouched.
+    call MBC6_SelectFlashB
+    ld a, 10
+    ld de, WIN_A_SIG
+    call CheckBankSignatureAt
+    jr c, .fail
+
+    ; Restore B and verify its bank number was retained.
     call MBC6_SelectROMB
     ld a, 20
     ld de, WIN_B_SIG
@@ -197,23 +225,15 @@ Test_T34:
     call RecordResult
     ret
 
-; --- Test_T35 --- Sector-0 protection observation (INFO).
-; The iceboy documentation describes a status-register bit 1 meaning
-; for sector-0 protection, but only in the context of an in-progress
-; program/erase operation; it does not confirm that bit is meaningful
-; when read from idle flash outside such an operation. Rather than
-; issue any protect/unprotect command (destructive-adjacent and out of
-; scope for the safe suite), this records the as-observed byte at the
-; window with no operation in progress, purely as INFO — docs/project-rules.md:
-; "Do not modify persistent protection state in the default suite."
+; --- Test_T35 --- Sector-0 protection status observation (INFO).
+; Iceboy documents entering program/status mode under WP, sampling bit 1,
+; and resetting before any buffer data/trigger. This is observational: no
+; hardware protection expectation is assumed for every cartridge.
 EXPORT Test_T35
 Test_T35:
-    call MBC6_EnableFlash
-    xor a
-    call MBC6_SetROMBankA
-    call MBC6_SelectFlashA
+    call Flash_EnterSector0Status
     ld a, [MBC6_ROM_WIN_A]
-    ld [wSector0StatusByte], a
+    ld [wSector0ProtectionStatus], a
     call Flash_Reset
     ld a, T_35
     ld d, RESULT_INFO

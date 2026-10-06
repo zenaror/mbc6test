@@ -287,7 +287,7 @@ WriteResultBlock:
     ld [hl+], a
     ld a, 2
     ld [hl+], a              ; format_version
-    ld a, 2
+    ld a, 3
     ld [hl+], a              ; suite_version
     ld a, [wSummaryPass]
     ld [hl+], a

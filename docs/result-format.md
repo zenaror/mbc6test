@@ -9,6 +9,11 @@ tests' own read/write patterns.
 
 ## Location
 
+The opt-in offline workflow has a separate 32-byte `M6OF` annex at `$BF20`.
+It does not overlap this 21-byte `M6TS` block or extend its test IDs/bitset.
+In that build, M6TS describes the safe suite; read M6OF for the offline verdict.
+See [net-de-get-offline.md](net-de-get-offline.md) for the annex ABI.
+
 - **SRAM bank:** 7 (last bank), selected in **window B**
   (`MBC6_REG_SRAM_BANK_B`).
 - **Offset:** `$F00` within the 4 KiB window (`$B000 + $F00 = $BF00`).
@@ -26,7 +31,7 @@ an in-progress test.
 |--------|------|-------|---------|
 | 0 | 4 | magic | ASCII `"M6TS"` |
 | 4 | 1 | format_version | Layout version of this table; `2` |
-| 5 | 1 | suite_version | Test-suite version; `2` |
+| 5 | 1 | suite_version | Test-suite version; `3` |
 | 6 | 1 | pass_count | Total PASS results |
 | 7 | 1 | fail_count | Total FAIL results |
 | 8 | 1 | skip_count | Total SKIP results |

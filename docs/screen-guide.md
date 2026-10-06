@@ -11,6 +11,15 @@ page is the on-screen companion to it.
 
 ## Screens
 
+The separate `ENABLE_NETDEGET_OFFLINE_FIXTURE=1` build starts its results on
+an additional **`OFFLINE INSTALL`** page: `RESULT` is PASS/FAIL/SKIP/NOT RUN,
+`MODE $01/$02` is install/reopen, `PHASE` identifies the current/failing step,
+`PAGES $40/$00` means 64 installed pages/none on reopen, and `EXEC $A65A`
+is the successful payload receipt. SELECT at confirmation shows NOT RUN,
+never a prior PASS. A then cycles through the three usual pages below.
+The safe-suite score is independent of the offline verdict. See
+[net-de-get-offline.md](net-de-get-offline.md) for phases and guards.
+
 The ROM shows one of these on boot:
 
 1. **`CGB REQUIRED`** — the ROM detected it isn't running on CGB
@@ -20,7 +29,7 @@ The ROM shows one of these on boot:
    with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` — never present in a
    default build). Hold **A+B+START** together for about 2 seconds to
    proceed, or press **SELECT** to skip straight to the results below
-   without running TD1-TD9.
+   without running TD1-TD12.
 3. **Results** (always shown once the safe test batch finishes). Three
    pages, cycled by pressing **A**:
    - **`MBC6 TEST RESULTS`** — every test's ID and status.
@@ -82,7 +91,7 @@ detail (authoritative source, exact expected value) is in
 | `T32` | Same as T31, through window B. |
 | `T33` | The flash reset command ($F0) actually exits ID mode. |
 | `T34` | Reads the flash chip's hidden 256-byte region and reports a checksum. Always `I` — there's no known-correct content to compare against. |
-| `T35` | Observes (doesn't modify) whatever byte the flash status line shows for sector 0 outside of an active operation. Always `I` — not confirmed meaningful outside an erase/program in progress. |
+| `T35` | Under WP, enters program/status mode, reads protection bit 1, then resets before loading data or triggering programming. Always `I`; no specific protection state is required. |
 | `EX1` | Experimental: what happens selecting ROM bank $FF (an out-of-range bank number with a high bit set). Always `I` — no documented expected behavior. |
 | `EX2` | Experimental: what happens writing the undocumented value `$C6` to a bank-source register. Always `I`. |
 | `TD1` | *(destructive only)* Erases flash sector 7 and confirms it reads back as `$FF`. |
@@ -90,7 +99,24 @@ detail (authoritative source, exact expected value) is in
 | `TD3` | *(destructive only)* Confirms programming can only clear bits (1→0), never set them back to 1 without an erase. |
 | `TD4` | *(destructive only)* Confirms the flash status "done" bit is reported and the polling timeout mechanism works. |
 | `TD5` | *(destructive only)* Observes sector-0 write-protect behavior. Always `I`. |
-| `TD6` | *(destructive only)* Always `S` — no authoritative source documents a hidden-region erase/program sequence, so this is honestly skipped rather than guessed at. |
+| `TD6` | *(mGBA fixture only)* Requires hidden-map marker `M6TD6FIXTUREONLY` at `$F0-$FF`; otherwise `S` before any hidden-map write. Checks erase, both programmed pages, A/B readback, ready/reset, and WP rejection. Never use on hardware or original save data. |
+| `TD7` | *(destructive only)* Programs out-of-order buffer slots and observes which bank/address the repeated-slot trigger commits to. |
+| `TD8` | *(destructive only)* Distinguishes `$F0` payload data from `$F0` as a repeated-slot buffer abort. |
+| `TD9` | *(destructive only)* Records hidden-map checksums through A/B after sector erase and `$F0`; INFO only. |
+| `D10` | *(fixture-only; TD10)* Records JEDEC ID bytes when mode entry and reads use opposite windows. |
+| `D11` | *(fixture-only; TD11)* Records immediate and ready status bytes through A/B after buffered program and chip erase. The chip erase destroys all flash. |
+| `D12` | *(fixture-only; TD12)* Records bytes at slots 0/127 of the first and last 128-byte pages in sector 7. |
+
+TD6 and TD10–TD12 require both `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` and
+`ENABLE_MGBA_FLASH_FIXTURE_TESTS=1`. Never run that build against a physical
+cartridge; TD11 performs a whole-chip erase and TD6 erases/programs hidden
+map data. TD6 also requires its exact marker in the disposable sidecar; the
+ordinary destructive build keeps TD6 as SKIP and does not contain the TD10–TD12
+call sites or chip-erase helper.
+
+When TD6 passes in the fixture build, the INFO page's `TD6 RDY A/B` line shows
+the ready bytes captured through both windows after the last programmed map
+page; the test also reads and checks all 256 map bytes through each window.
 
 ## The FAILURE DETAIL page
 
@@ -119,20 +145,32 @@ If the page instead says **`NO FAILURES`**, no test failed this run.
 ## The INFO / EXPERIMENTAL page
 
 ```
-INFO / EXPERIMENTAL
+INFO / A: NEXT
 
 T34 HIDDEN CKSM=$00
-T35 SECTOR0 ST =$FF
+T35 SEC0 WP=$80
 EX1 BANK $FF DATA:
 4D 36 42 4B
 EX2 C6ROMFLAG =$00
+TD9 MAP A/B=$99/$99
+TD10 A>B:$C2/$81
+TD10 B>A:$C2/$81
+P0 A/B:$00/$00
+P1 A/B:$80/$80
+C0 A/B:$00/$00
+C1 A/B:$80/$80
+TD12 0/7F:$A5/$5A
+TD12 END:$A5/$5A
 ```
 
 - **T34 HIDDEN CKSM** — an XOR checksum of the 256-byte hidden flash
   region. No expected value; useful for noticing if it *changes*
   between runs/implementations, not for judging correct vs. incorrect.
-- **T35 SECTOR0 ST** — the raw byte observed at the flash status
-  address for sector 0, outside of any erase/program operation.
+- **T35 SEC0 WP** — the raw status byte after entering program/status mode
+  without loading buffer data. Bit 1 indicates sector-0 protection in Iceboy's
+  Net de Get procedure. The emulator fixtures produced `$80` when unprotected
+  and `$82` when protected; the entire byte is retained for observation, not
+  compared to either value as a hardware requirement.
 - **EX1 BANK $FF DATA** — the first 4 of the 16 bytes read back when
   ROM bank `$FF` (invalid/out-of-range) is selected. `4D 36 42 4B`
   ("M6BK" in ASCII) is the magic that starts *every* bank's signature,
@@ -145,6 +183,17 @@ EX2 C6ROMFLAG =$00
 - **EX2 C6ROMFLAG** — `$00` if window A still read like ordinary ROM
   after writing the undocumented value `$C6` to its source-select
   register; `$01` if it read like something else.
+- **TD9** — XOR checksums for the same hidden-map offsets through A and B.
+  A matching pair is a fixture observation, not a general hardware rule.
+- **TD10** — manufacturer/device bytes after A-to-B and B-to-A ID mode
+  observations. The ID values are documented; cross-window visibility is
+  still INFO.
+- **TD11 P0/P1/C0/C1** — status snapshots immediately after (0) and after
+  bounded polling to ready (1), for program (P) and chip erase (C), shown as
+  A/B. Values are observational; the chip erase affects the full flash image.
+- **TD12** — readback at offsets `$0000/$007F` (`0/7F`) and `$1F80/$1FFF`
+  (`END`) within physical flash bank 112. It records bytes without scoring
+  undefined frontier behavior.
 
 ## Machine-readable results
 
