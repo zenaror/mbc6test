@@ -20,7 +20,7 @@ The ROM shows one of these on boot:
    with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` — never present in a
    default build). Hold **A+B+START** together for about 2 seconds to
    proceed, or press **SELECT** to skip straight to the results below
-   without running TD1-TD6.
+   without running TD1-TD8.
 3. **Results** (always shown once the safe test batch finishes). Three
    pages, cycled by pressing **A**:
    - **`MBC6 TEST RESULTS`** — every test's ID and status.

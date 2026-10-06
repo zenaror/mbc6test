@@ -1,4 +1,4 @@
-; Destructive flash tests: TD1-TD6.
+; Destructive flash tests: TD1-TD8.
 ;
 ; docs/project-rules.md "Destructive flash policy": compiled in only when built
 ; with ENABLE_DESTRUCTIVE_FLASH_TESTS=1 (default is 0 — see Makefile).
@@ -297,6 +297,195 @@ Test_TD6:
     ld a, T_TD6
     ld d, RESULT_SKIP
     call RecordResult
+    ret
+
+; --- Test_TD7 --- Partial, out-of-order page buffer and trigger destination.
+; Uses only sector 7 in a disposable emulator fixture. Data slots 5 then 1
+; are loaded in bank 112; repeating the last slot (slot 1) in bank 113 triggers programming
+; at the trigger address. This follows Iceboy's documented partial-buffer,
+; arbitrary-order and trigger-address rules; it is intentionally gated with
+; every other operation that can alter cartridge flash.
+EXPORT Test_TD7
+Test_TD7:
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call Flash_EraseSector
+    jp c, .eraseFailed
+
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, $A0
+    ld [FLASH_CMD_ADDR_A], a
+
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, $A5
+    ld [MBC6_ROM_WIN_A + $0085], a ; slot 5 first, page offset $80
+    ld a, $5A
+    ld [MBC6_ROM_WIN_A + $0081], a ; out of order: slot 1 second
+
+    ; The repeated slot and mapped bank at trigger time select the target.
+    ld a, FLASH_SECTOR7_FIRST_BANK + 1
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, $00
+    ld [MBC6_ROM_WIN_A + $0081], a ; repeat last slot 1 = commit at bank 113
+    ld hl, MBC6_ROM_WIN_A + $0081
+    call Flash_PollStatus
+    jr c, .programFailed
+    call Flash_Reset
+
+    ld a, FLASH_SECTOR7_FIRST_BANK + 1
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, [MBC6_ROM_WIN_A + $0085]
+    cp $A5
+    jr nz, .badSlot5
+    ld a, [MBC6_ROM_WIN_A + $0081]
+    cp $5A
+    jr nz, .badSlot1
+    ld a, T_TD7
+    ld d, RESULT_PASS
+    call RecordResult
+    ret
+
+.eraseFailed:
+    ld a, T_TD7
+    call RecordFailureDetail
+    ret
+.programFailed:
+    ld a, [wLastFlashStatus]
+    ld [wLastCheckActual], a
+    ld a, $80
+    ld [wLastCheckExpected], a
+    ld a, FLASH_SECTOR7_FIRST_BANK + 1
+    ld [wLastCheckBank], a
+    call Flash_Reset
+    ld a, T_TD7
+    call RecordFailureDetail
+    ret
+.badSlot5:
+    ld [wLastCheckActual], a
+    ld a, $A5
+    ld [wLastCheckExpected], a
+    ld a, FLASH_SECTOR7_FIRST_BANK + 1
+    ld [wLastCheckBank], a
+    ld a, T_TD7
+    call RecordFailureDetail
+    ret
+.badSlot1:
+    ld [wLastCheckActual], a
+    ld a, $5A
+    ld [wLastCheckExpected], a
+    ld a, FLASH_SECTOR7_FIRST_BANK + 1
+    ld [wLastCheckBank], a
+    ld a, T_TD7
+    call RecordFailureDetail
+    ret
+
+; --- Test_TD8 --- $F0 as buffered data versus $F0 repeated-slot abort.
+; The first page must retain $F0 in a non-trigger payload slot. The second
+; page deliberately repeats its final slot with $F0 and must remain erased.
+; Both vectors run only against the disposable sector-7 fixture.
+EXPORT Test_TD8
+Test_TD8:
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call Flash_EraseSector
+    jp c, .eraseFailed
+
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, $A0
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, $F0
+    ld [MBC6_ROM_WIN_A + $0103], a ; F0 payload at slot 3
+    ld a, $3C
+    ld [MBC6_ROM_WIN_A + $0107], a
+    ld a, 0
+    ld [MBC6_ROM_WIN_A + $0107], a ; repeat slot 7 with non-F0 commits
+    ld hl, MBC6_ROM_WIN_A + $0107
+    call Flash_PollStatus
+    jr c, .programFailed
+    call Flash_Reset
+
+    ; Start a second buffer then abort by repeating slot 4 with F0.
+    call Flash_SelectCommandWindows
+    ld a, FLASH_CMD_UNLOCK1
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_CMD_UNLOCK2
+    ld [FLASH_CMD_ADDR_B], a
+    ld a, 1
+    ld [MBC6_REG_FLASH_WE], a
+    ld a, $A0
+    ld [FLASH_CMD_ADDR_A], a
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, $33
+    ld [MBC6_ROM_WIN_A + $0184], a
+    ld a, $F0
+    ld [MBC6_ROM_WIN_A + $0184], a ; repeated slot + F0 aborts buffer
+    call Flash_Reset
+
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    call MBC6_SetROMBankA
+    call MBC6_SelectFlashA
+    ld a, [MBC6_ROM_WIN_A + $0103]
+    cp $F0
+    jr nz, .badPayload
+    ld a, [MBC6_ROM_WIN_A + $0184]
+    cp $FF
+    jr nz, .abortChangedArray
+    ld a, T_TD8
+    ld d, RESULT_PASS
+    call RecordResult
+    ret
+
+.eraseFailed:
+    ld a, T_TD8
+    call RecordFailureDetail
+    ret
+.programFailed:
+    ld a, [wLastFlashStatus]
+    ld [wLastCheckActual], a
+    ld a, $80
+    ld [wLastCheckExpected], a
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    ld [wLastCheckBank], a
+    call Flash_Reset
+    ld a, T_TD8
+    call RecordFailureDetail
+    ret
+.badPayload:
+    ld [wLastCheckActual], a
+    ld a, $F0
+    ld [wLastCheckExpected], a
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    ld [wLastCheckBank], a
+    ld a, T_TD8
+    call RecordFailureDetail
+    ret
+.abortChangedArray:
+    ld [wLastCheckActual], a
+    ld a, $FF
+    ld [wLastCheckExpected], a
+    ld a, FLASH_SECTOR7_FIRST_BANK
+    ld [wLastCheckBank], a
+    ld a, T_TD8
+    call RecordFailureDetail
     ret
 
 ENDC

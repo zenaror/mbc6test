@@ -52,7 +52,7 @@ The default build (`ENABLE_DESTRUCTIVE_FLASH_TESTS=0`, the default)
 contains **no flash erase, program, protect, or unprotect code path
 reachable from normal operation** — see `docs/test-matrix.md` for
 exactly which tests are safe (T00-T35, EX01-EX02) versus destructive
-(TD1-TD6). Destructive tests exist in source
+(TD1-TD8). Destructive tests exist in source
 (`src/tests_flash_destructive.asm`) but are compiled out entirely
 unless the ROM is built with `ENABLE_DESTRUCTIVE_FLASH_TESTS=1`, and
 even then they require deliberate multi-button confirmation and are
@@ -111,7 +111,7 @@ mirrored to a private Gitea instance for backup, but that's not where
 releases are cut). `.github/workflows/release.yml` builds and runs
 `make verify` on both the default (non-destructive) configuration and
 the `ENABLE_DESTRUCTIVE_FLASH_TESTS=1` one, checks that only the
-destructive ROM contains the TD1-TD6 code, and publishes both
+destructive ROM contains the TD1-TD8 code, and publishes both
 (`mbc6-test.gbc` and the clearly labeled `mbc6-test-DESTRUCTIVE.gbc`)
 on a GitHub release tagged with the short commit hash — the same one
 the ROM itself shows on screen. It's manually triggered only
@@ -143,7 +143,7 @@ P:12 F:03 S:00 I:05
 A:NEXT PAGE
 ```
 
-`-` means a test never ran in this build (e.g. TD1-TD6 in the default,
+`-` means a test never ran in this build (e.g. TD1-TD8 in the default,
 non-destructive build) — distinct from an actual PASS.
 
 Press **A** to cycle to the **failure detail page** (the first FAIL
@@ -186,9 +186,9 @@ without needing to compare checksums.
 
 A FAIL is evidence to investigate the emulator's or hardware's MBC6
 implementation — see `docs/test-matrix.md`'s "Status" column for known
-cases (e.g. T31-T33 currently FAIL on both GBE+ and mGBA because
-neither implements MBC6 flash JEDEC ID readback; see
-`docs/mbc6-notes.md` for the source-level root cause in each).
+cases. T31-T33 pass in the local, uncommitted mGBA MBC6 development tree;
+that result does not describe a released mGBA version or hardware.
+Earlier GBE+ and mGBA results remain documented in `docs/mbc6-notes.md`.
 Runtime results are evidence to iterate on the *tests*, not license to
 rewrite the documented expected behavior to match a particular
 emulator.
