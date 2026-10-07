@@ -685,12 +685,12 @@ workflow. The M6FL32-byte annex at bank7BF60 leaves the M6TS/M6OF layouts
 unchanged. See [flash-latch-fixture.md](flash-latch-fixture.md) for register
 sequence, commands, ABI, hashes and differential results.
 
-The installed release and experimental candidate each passed21 fixture
+The installed release and experimental candidate each passed 21 fixture
 integrity checks with a completed INFO observation. The old core retained
 B FF/FF both continuously-enabled and after enable cycling; the candidate
-retained continuous FF/FF but returned mapped bank96 A5/C3 after cycling.
-A controls remained A5/C3; a new90/F0 control returned B A5/C3 in both.
-The sector7 erase and preservation of every other sidecar byte passed, and
+retained continuous FF/FF but returned mapped bank 96 A5/C3 after cycling.
+A controls remained A5/C3; a new $90/F0 control returned B A5/C3 in both.
+The sector 7 erase and preservation of every other sidecar byte passed, and
 no-marker fixtures skipped without modifying flash. Reports:
 `/tmp/mbc6-latch-njx20t7c/report.json` (installed release) and
 `/tmp/mbc6-latch-9ekuuow8/report.json` (candidate). No emulator source or release
@@ -701,7 +701,7 @@ candidate librarySHA0122452480576dd1942e932523f30a3e95ddc288fc94906184e1fe2b3fe8
 embedded `0.11-feature/full_server-9341-ed393f522-dirty`,
 `ed393f52297dbab765ea8634742b2173baa1777d-dirty`. Do not attribute this modified
 core to a clean commit. The offline ROMbb1470e98f385ec255404b645acefa113013673ff83f014770f9d35afd5b2d79
-passed all56 assertions/six cases in `/tmp/mbc6-offline-dccldju3/report.json`.
+passed all 56 assertions/six cases in `/tmp/mbc6-offline-dccldju3/report.json`.
 
 A separate runner subagent executed the four legacy cases below; I inspected
 its full JSON, stdout and saved results. Report:
@@ -723,7 +723,7 @@ src/gb/mbc/mbc.c and src/gb/test/mbc.c, as recorded by that runner.
 
 Build/static verification passed for the branch's safe, classic fixture,
 offline and new latch configurations. The branch's original offline workflow
-also passed56 checks against the installed ed393f522 library in
+also passed 56 checks against the installed ed393f522 library in
 `/tmp/mbc6-offline-2taumykl/report.json`; its ROM SHA1e50d2516c8385c6c4a7bb6e93ffd403f038ca08835df029ccf2a2cb4fd8da6d
 has diagnostic buildID70E44E9+, distinct from the frozen25c8627 artifact.
 No latch read value was promoted to a hardware requirement. Original-game
@@ -738,14 +738,14 @@ Runtime version `0.11-feature/full_server-9342-61f28d126` and library SHA-256
 `7b072fa21168ece875baceb979113afe2c0cb298da52d45b599941c6a95c2f2c`
 were confirmed, with no dirty suffix and no library mutation during testing.
 
-- M6FL:21 integrity checks passed; continuous BFF/FF, cycled BA5/C3,
-  new-opcode BA5/C3, A control preserved. Result remains INFO.
+- M6FL: 21 integrity checks passed; continuous B FF/FF, cycled B A5/C3,
+  new-opcode B A5/C3, A control preserved. Result remains INFO.
   Report `/tmp/mbc6-latch-44k5b0su/report.json`.
-- Offline:56 checks passed, including full8192-byte installation and zero-write
+- Offline: 56 checks passed, including full 8192-byte installation and zero-write
   fresh-core reopen, plus cancellation and rejection scenarios.
   Report `/tmp/mbc6-offline-4vumr3wq/report.json`.
-- Legacy: WP0/WP1 each15/0/0/5, marked fixture22/0/0/10,
-  no-TD6-marker fixture21/0/1/10; T30PASS/T35INFO in every case.
+- Legacy: WP0/WP1 each 15/0/0/5, marked fixture 22/0/0/10,
+  no-TD6-marker fixture 21/0/1/10; T30 PASS/T35 INFO in every case.
   Report `/tmp/mbc6-runtime-20261006/clean-legacy-5r54218l/report.json`.
 
 Full frozen-artifact identity and observation limits are recorded in
@@ -769,3 +769,40 @@ state when those runs were made, before this integration.
 Hardware execution is outside the available validation environment. Missing
 original commercial minigames are not a release dependency for this open
 homebrew Test ROM. This integration does not claim either as validated.
+
+### Main integration validated on final mGBA `431041ac6` (2026-10-06)
+
+The four Test ROM configurations were built and statically verified from
+clean main commit `b7c905b45fee1624e2e749e3477f8829a7fa5e49`. They were then
+executed with disposable saves against clean mGBA
+`431041ac6e264b119476d47ecf9ab96f03f11d54`. Every runtime reported
+`0.11-feature/full_server-9343-431041ac6`, without a dirty suffix.
+The isolated library SHA-256 was
+`785daae7d4440ef15bf3238a92c8b33d621d8b84f6aacf85bac102f336c2650f`.
+
+| Build | ROM SHA-256 | Runtime result |
+|---|---|---|
+| Safe | `8ce1c8bb432305576122ed90ea475f6551a4a9a4994a7bffc146660eaca1c788` | WP0/WP1 each 15/0/0/5, complete flash unchanged |
+| Destructive fixture | `a6af092bc9c5fb959342c483234ca3cb71d3833d034b7c17342f99e56e10ee30` | Marked 22/0/0/10; no TD6 marker 21/0/1/10 |
+| Offline | `9411601f6acbcbfadf1bc3a84a8a442f2dd409cb7d5ff380cd48befdd9ce851b` | All 56 checks passed |
+| Latch | `b9e6744c0460742b38f039cef146cdb0346ad5312e1939d6aef5b6add7657a46` | All 21 integrity checks passed; raw observation INFO |
+
+Reports: `/tmp/mbc6-runtime-20261006/clean-legacy-rky7mkn4/report.json`,
+`/tmp/mbc6-offline-7pky_u12/report.json` and
+`/tmp/mbc6-latch-xr0bh80_/report.json`. Full command lines, compile flags,
+embedded versions, hashes and disposable-case snapshots are preserved there.
+The library hash was unchanged during testing. T30 was PASS, T35 INFO,
+and M6TS valid in all four legacy cases. WP0/WP1 status was $80/$82.
+The no-TD6-marker fixture still runs other destructive tests.
+
+Offline installed the complete original 8192-byte homebrew payload, then a
+fresh core reopened it with zero writes. Cancellation, invalid saved record,
+missing marker and corrupted-payload cases behaved as specified. M6FL retained
+continuous B FF/FF, cycled B A5/C3 and new-opcode B A5/C3, with A A5/C3
+throughout; missing marker skipped erase and preserved the complete sidecar.
+These results validate the integrated workflows on this emulator revision.
+They do not establish physical latch lifetime or every original-game feature.
+
+The staged ROMs retain the tested build ID B7C905B. Later documentation-only
+commits do not rebuild or relabel these frozen artifacts. The default safe
+ROM remains separate from each explicitly destructive fixture build.

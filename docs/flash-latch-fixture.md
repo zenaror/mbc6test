@@ -54,34 +54,34 @@ at `$F0-$FF`. Without it, return SKIP and verify the complete flash sidecar is
 unchanged. The marker is a fixture guard, not a hardware detector. SELECT at
 confirmation cancels without performing this observation.
 
-The fixture seeds bank96 (sector6, linear `$C0000`) with `$A5` at local `$0005`
+The fixture seeds bank 96 (sector6, linear `$C0000`) with `$A5` at local `$0005`
 and `$C3` at `$0044`. Sector7 is seeded with `$37` throughout. A and B initially
-map bank96; record both offset pairs as the baseline. A bank outside sector7
+map bank 96; record both offset pairs as the baseline. A bank outside sector 7
 is necessary because erasing that entire sector would otherwise erase both
 the target and the comparison bank.
 
-1. Issue the B-only unlock/sector-erase sequence, targeting bank112 (sector7).
+1. Issue the B-only unlock/sector-erase sequence, targeting bank112 (sector 7).
    Sample status through B `$6000`, poll ready DQ7 with a software bound.
 2. After ready, write a single `$F0` at B `$6000` and lower WE. Change only
-   bank/source mapping to bank96 in both windows. Record B `$6005/$6044`
+   bank/source mapping to bank 96 in both windows. Record B `$6005/$6044`
    and A `$4005/$4044`. Do not use `Flash_Reset` or an enable helper between
    the erase and this sample: those would contaminate the independent variable.
-3. Perform `WE=1; enable=0; WE=0; WE=1; enable=1; WE=0`, then reselect bank96
+3. Perform `WE=1; enable=0; WE=0; WE=1; enable=1; WE=0`, then reselect bank 96
    and flash source in both windows. Record the same four addresses. No new
    chip opcode occurs between steps2 and3. The measured variable is this
    complete register cycle, not the isolated effect of `$0C00` or `$1000`.
 4. As a separate control, issue a B-only `$90` autoselect opcode without
-   an enable cycle, then `$F0`; map bank96 and record B's offset pair again.
+   an enable cycle, then `$F0`; map bank 96 and record B's offset pair again.
 5. Restore ROM source/banks A=2/B=3, WE=0 and WRAM bank1. Write the result
    annex and the ordinary safe-suite M6TS record.
 
 No after-erase read is scored against a guessed value. A completed sequence
-is INFO whether it returns erased bytes, bank96 sentinels or another raw value.
+is INFO whether it returns erased bytes, bank 96 sentinels or another raw value.
 A polling timeout is an operational FAIL, with the raw status/phase retained;
 recovery uses the full Iceboy `Flash_Reset` only after aborting the sequence.
 
 The host runner asserts fixture integrity: baseline sentinels, bounded
-completion, record/checksum, full sector7 erased, and every byte of the other
+completion, record/checksum, full sector 7 erased, and every byte of the other
 seven sectors, hidden map and protection metadata preserved. These setup and
 persistence checks are distinct from the unresolved read observations. It
 reports whether each raw read matches the other-bank seed or erased data,
@@ -100,7 +100,7 @@ first, with baseline/continuous/cycled/new-command B pairs.
 | 4 | Format1 |
 | 5 | Outcome: 3 INFO, 2 SKIP, 1 operational FAIL; UI0 NOT RUN |
 | 6 | Phase: 1 marker, 2 baseline, 3 erase/poll, 4 continuous, 5 cycle, 6 opcode control, 7 done |
-| 7–8 | Erase bank112 and other bank96 |
+| 7–8 | Erase bank112 and other bank 96 |
 | 9–12 | Baseline B05/B44/A05/A44 |
 | 13–14 | Initial erase status and last polled status (raw observations) |
 | 15–18 | Continuously enabled B05/B44/A05/A44 |
@@ -122,7 +122,7 @@ evidence and the mGBA investigation justify it.
 The same precommit fixture ROM, SHA-256
 `1c2a84921e64721dded4b9592ff822db27fcc4050f7a84facf1c763e1b87be87`,
 symbols `686aad3449f7a49afedb27103bb59b5bf702dc37a81d6762ae98b76b79bc873e`,
-ran normally on both supplied libraries. Each run passed21 fixture-integrity
+ran normally on both supplied libraries. Each run passed 21 fixture-integrity
 checks; the positive ROM outcome was INFO, not a latch compatibility PASS.
 
 | Observation B05/B44 | Installed release | Experimental candidate |
@@ -130,10 +130,10 @@ checks; the positive ROM outcome was INFO, not a latch compatibility PASS.
 | Before erase | A5/C3 | A5/C3 |
 | Erase/F0/remap, continuously enabled | FF/FF | FF/FF |
 | After register disable/enable cycle | FF/FF | A5/C3 |
-| After new90 opcode/F0 | A5/C3 | A5/C3 |
+| After new $90 opcode/F0 | A5/C3 | A5/C3 |
 
 A-window control reads remained A5/C3 throughout; initial/ready erase status
-was00/80. In both runs, sector7 was entirely erased and all other flash bytes,
+was $00/$80. In both runs, sector 7 was entirely erased and all other flash bytes,
 hidden map and metadata were preserved. No-marker runs skipped erase and left
 the whole sidecar unchanged. Safe M6TS remained15/0/0/5, checksum42.
 
@@ -164,7 +164,7 @@ symbols retain SHA-256
 `686aad3449f7a49afedb27103bb59b5bf702dc37a81d6762ae98b76b79bc873e`.
 These artifacts were not rebuilt for this documentation update.
 
-All21 fixture-integrity checks passed in
+All 21 fixture-integrity checks passed in
 `/tmp/mbc6-latch-44k5b0su/report.json`. Continuous B reads were FF/FF,
 cycled B reads A5/C3, and reads after the new opcode A5/C3. A remained
 A5/C3 throughout. The positive result remains INFO; missing marker returns
@@ -172,20 +172,31 @@ SKIP with the entire flash unchanged. This reproduces the experimental
 candidate's observation using a committed core, without establishing a
 hardware rule or independently proving the natural-game failure cause.
 
-The frozen offline ROM `25c8627` also passed all56 checks on this library in
-`/tmp/mbc6-offline-4vumr3wq/report.json`: full8192-byte install, fresh-core
+The frozen offline ROM `25c8627` also passed all 56 checks on this library in
+`/tmp/mbc6-offline-4vumr3wq/report.json`: full 8192-byte install, fresh-core
 reopen with zero writes, cancellation, invalid prior record, missing marker
 and corrupt payload handling. Its ROM SHA-256 is
 `bb1470e98f385ec255404b645acefa113013673ff83f014770f9d35afd5b2d79`.
 No main-branch ROM or released fixture was replaced by this investigation.
 
 Four frozen legacy cases also completed with valid M6TS and no FAIL:
-WP0 and WP1 each15/0/0/5, marked destructive fixture22/0/0/10, and
+WP0 and WP1 each 15/0/0/5, marked destructive fixture 22/0/0/10, and
 fixture without TD6 marker21/0/1/10 (TD6 SKIP). T30 was PASS and T35 INFO;
-raw protection status was80 for WP0 and82 for WP1. Both safe flash sidecars
+raw protection status was $80 for WP0 and $82 for WP1. Both safe flash sidecars
 were unchanged. The legacy report is
 `/tmp/mbc6-runtime-20261006/clean-legacy-5r54218l/report.json`.
 All executions used new disposable saves. The isolated library hash was
 unchanged before and after testing, and the runtime version was clean in
 every case. The fixture-without-marker case still runs the other destructive
 tests; it is not an assertion that its entire sidecar remains unchanged.
+
+## Main integration on final core `431041ac6`
+
+The main build from `b7c905b` passed the same 21 integrity checks on clean
+mGBA `431041ac6e264b119476d47ecf9ab96f03f11d54`, report
+`/tmp/mbc6-latch-xr0bh80_/report.json`. Continuous/cycled/new-opcode B reads
+remain FF/FF, A5/C3 and A5/C3 respectively, with A A5/C3 throughout.
+The outcome remains INFO. This is an explicitly enabled fixture in main;
+it does not add destructive operations to the default safe ROM.
+Artifact hashes and the accompanying offline/legacy regressions are recorded
+in [the final main validation](mbc6-notes.md#main-integration-validated-on-final-mgba-431041ac6-2026-10-06).
