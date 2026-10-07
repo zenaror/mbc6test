@@ -806,3 +806,30 @@ They do not establish physical latch lifetime or every original-game feature.
 The staged ROMs retain the tested build ID B7C905B. Later documentation-only
 commits do not rebuild or relabel these frozen artifacts. The default safe
 ROM remains separate from each explicitly destructive fixture build.
+
+### Installed Linux release library recheck (2026-10-06)
+
+The same frozen main `b7c905b` ROMs above were also run against the library
+from the final Linux release package, isolated at
+`/tmp/mgba-installed-431041-verify/libmgba.so.0.11.0`.
+Its SHA-256 is
+`9d1c7aa87d5f82f13b78a19c85778b48ff3258f1c387291299e5045d150ca936`.
+Every case reported clean mGBA
+`0.11-feature/full_server-9343-431041ac6`, full commit
+`431041ac6e264b119476d47ecf9ab96f03f11d54`.
+
+- M6FL: all 21 integrity checks passed, positive INFO, missing-marker SKIP;
+  report `/tmp/mbc6-latch-onde8vz4/report.json`.
+- Offline: all 56 checks passed, including installation, zero-write reopen,
+  cancellation and rejection scenarios;
+  report `/tmp/mbc6-offline-u38pxhta/report.json`.
+- Legacy: all four cases passed with the same counts, protection observations,
+  valid M6TS and safe-flash preservation as the isolated core above;
+  report `/tmp/mbc6-runtime-20261006/clean-legacy-d4ajyanx/report.json`.
+
+Compile definitions and header configuration matched the supplied release
+library. The library hash was unchanged before and after testing. No dirty
+candidate result is presented as release evidence. The release payload keeps
+its tested ROM build ID B7C905B and separates safe, destructive, offline and
+latch directories, with build flags, hashes and validation manifests. This
+recheck is emulator evidence; the M6FL read values remain INFO.
