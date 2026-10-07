@@ -833,3 +833,42 @@ candidate result is presented as release evidence. The release payload keeps
 its tested ROM build ID B7C905B and separates safe, destructive, offline and
 latch directories, with build flags, hashes and validation manifests. This
 recheck is emulator evidence; the M6FL read values remain INFO.
+
+### Upstream synchronization: installed Linux `3bae8be55` (2026-10-07)
+
+The frozen Test ROMs from main `b7c905b`, with the same hashes listed above,
+were rerun against the installed Linux library from mGBA
+`3bae8be55b3f4506b8e77602fe343debf9f61940`. The runtime reported
+`0.11-feature/full_server-9429-3bae8be55`, without a dirty suffix.
+Library SHA-256:
+`4ca861c36b9271620665b28988aca89ff3516c3c03bcb70b45a3bddf940b0984`.
+
+This mGBA revision incorporates upstream
+`3a5e34be33dc7f8f707e5bc9db69e8a430046f21`. The source header now includes
+`mCore.removeCoreCallbacks`, changing the core ABI. All host runners were
+recompiled using the final source snapshot and matching build definitions;
+no executable compiled for the earlier ABI was reused. Source `core.h`
+SHA-256 was
+`e77d0b72af5b76d9b66292968359122a15ab5c4c624d684af7ad339fa700e7a9`;
+`CMakeFiles/mgba.dir/flags.make` SHA-256 was
+`8411b15e08a619451c91d8c45681d8b35fff0622d5bf1858af5655b93c1114bf`.
+The installed library and its configuration were isolated in `/tmp`.
+
+| Workflow | Result | Report |
+|---|---|---|
+| M6FL latch | 21/21 integrity checks; positive INFO and absent-marker SKIP | `/tmp/mbc6-latch-p0o3wquf/report.json` |
+| Offline install/reopen | 56/56 checks, including all rejection/cancellation scenarios | `/tmp/mbc6-offline-rxdznpix/report.json` |
+| Four legacy cases | WP0/WP1 each 15/0/0/5; marked fixture 22/0/0/10; no TD6 marker 21/0/1/10 | `/tmp/mbc6-runtime-20261006/clean-legacy-9n_bvo6_/report.json` |
+
+Every legacy case had valid M6TS, T30 PASS, T35 INFO and no FAIL; raw
+protection status was $80/$82 for WP0/WP1, and both safe flash sidecars
+remained unchanged. M6FL retained continuous B FF/FF, cycled B A5/C3,
+new-opcode B A5/C3 and A A5/C3 throughout. The no-marker latch case
+preserved the complete sidecar. Offline installation verified all 8192
+payload bytes and reopened in a fresh core with zero writes.
+
+All runs used newly created disposable saves, confirmed the actual embedded
+version and resolved the isolated library's SONAME. Its hash was unchanged
+before and after execution. No Test ROM source, ROM or build flags changed
+for this recheck. The results are emulator regression evidence; raw latch
+reads remain INFO and do not establish hardware behavior.
