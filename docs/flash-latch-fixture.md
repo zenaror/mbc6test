@@ -4,8 +4,8 @@ Exploratory fixture for the reported Net de Get MOVE/DELETE failure. This
 fixture records raw reads; it does **not** establish that the failure is caused
 by the mapper or prescribe a latch lifetime. It was developed on
 `codex/flash-enable-latch-observation` and integrated into `main` on
-2026-10-06 after Rafael authorized the merge. It remains an opt-in build;
-the default ROM does not run this destructive observation.
+2026-10-06 after the project operator authorized the merge. It remains an
+opt-in build; the default ROM does not run this destructive observation.
 
 ## Evidence and scope
 

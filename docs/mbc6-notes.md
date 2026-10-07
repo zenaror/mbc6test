@@ -145,7 +145,7 @@ this ROM.
 
 ## More MBC6 flash sources, and the changes they prompted
 
-Rafael pointed at four more sources partway through development:
+The project operator pointed at four more sources partway through development:
 dandocs, FlashGBX, `wodowiesel/GB-Dumper` and `sanni/cartreader`.
 GB-Dumper turned out to be irrelevant to MBC6 (MBC1/2/5 pinouts only).
 The other three were significant:
@@ -758,8 +758,8 @@ fixtures remain unchanged. Hardware latch lifetime is still unvalidated.
 
 ### Observational fixture integrated into main (2026-10-06)
 
-Rafael explicitly authorized merging the MBC6 Test ROM into main. The
-M6FL investigation branch was integrated by fast-forward, preserving its
+The project operator explicitly authorized merging the MBC6 Test ROM into
+main. The M6FL investigation branch was integrated by fast-forward, preserving its
 source and validation history. The fixture remains compiled only with all
 three explicit destructive/fixture/latch flags; post-erase read values stay
 INFO. The default safe build and the independent offline fixture retain
