@@ -2,8 +2,10 @@
 
 Exploratory fixture for the reported Net de Get MOVE/DELETE failure. This
 fixture records raw reads; it does **not** establish that the failure is caused
-by the mapper, prescribe a latch lifetime, or change the released Test ROM.
-The investigation lives on `codex/flash-enable-latch-observation`.
+by the mapper or prescribe a latch lifetime. It was developed on
+`codex/flash-enable-latch-observation` and integrated into `main` on
+2026-10-06 after Rafael authorized the merge. It remains an opt-in build;
+the default ROM does not run this destructive observation.
 
 ## Evidence and scope
 
@@ -40,7 +42,7 @@ python3 tools/run_mgba_latch.py \
 
 The third flag requires both destructive fixture flags and is mutually
 exclusive with `ENABLE_NETDEGET_OFFLINE_FIXTURE`. It replaces TD1-TD12 with
-this observation. The default ROM and released artifacts are not modified.
+this observation. The default build omits the destructive latch workflow.
 The host runner uses fresh `/tmp/mbc6-latch-*` copies, normal ROM boot, joypad
 confirmation and a bounded completion wait. It records hashes, embedded core
 version and full SRAM/flash snapshots. No PC redirection is used.

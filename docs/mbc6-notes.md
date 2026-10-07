@@ -755,3 +755,17 @@ regression checkpoint. Earlier candidate runs remain historical evidence.
 No original-game maintenance flow was executed in this Test ROM recheck;
 those traces belong to the mGBA owner's separate validation. Main and released
 fixtures remain unchanged. Hardware latch lifetime is still unvalidated.
+
+### Observational fixture integrated into main (2026-10-06)
+
+Rafael explicitly authorized merging the MBC6 Test ROM into main. The
+M6FL investigation branch was integrated by fast-forward, preserving its
+source and validation history. The fixture remains compiled only with all
+three explicit destructive/fixture/latch flags; post-erase read values stay
+INFO. The default safe build and the independent offline fixture retain
+their existing roles. Historical branch-only statements above describe the
+state when those runs were made, before this integration.
+
+Hardware execution is outside the available validation environment. Missing
+original commercial minigames are not a release dependency for this open
+homebrew Test ROM. This integration does not claim either as validated.
