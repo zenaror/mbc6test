@@ -38,7 +38,7 @@ fontes originais, seguindo a hierarquia de fontes de
 
 ## Como trabalhar
 
-- Fale com o Rafael em português do Brasil.
+- Fale com o Operador em português do Brasil.
 - Só faça commit ou push quando ele pedir.
 - Leia a implementação e as fontes antes de mudar algo. Preserve as
   restrições de arquitetura (por exemplo, código que troca bancos fica na
@@ -74,6 +74,10 @@ o anexo M6OF é separado da ABI M6TS. Nunca execute em cartuchos reais.
   `docs/test-matrix.md`, experiências com origem/versão/evidência em
   `docs/mbc6-notes.md`. A documentação pública deve ser compreensível sem OMM;
   não copie registros internos ou conversas para o Git.
+- Use papéis como “Operador” ou “responsável pelo projeto” na documentação
+  pública, sem nomes pessoais, e-mails ou identificadores desnecessários.
+  Preserve atribuições de terceiros, licenças, URLs e caminhos técnicos
+  necessários; não reescreva o histórico Git para essa revisão.
 - Registre na OMM, no escopo `mbc6test`, o conhecimento duradouro novo,
   com origem, versão e evidência. Ao atualizar algo, marque o registro
   antigo como `superseded`.

@@ -1,8 +1,8 @@
 # Project rules — MBC6 Test ROM
 
 This file holds the project's full technical rules. Until 2026-10-04 they
-lived in `CLAUDE.md`, which was removed at Rafael's request; the text below
-is unchanged except for this note, the spelled-out name of the iceboy
+lived in `CLAUDE.md`, which was removed at the project operator's request.
+The text below is unchanged except for this note, the spelled-out name of the iceboy
 reference, the repository-structure listing, and the shared-memory section
 at the end. `AGENTS.md` is the short working guide for
 agents and points here.
