@@ -910,3 +910,37 @@ host-script changes. The frozen release ROMs and assembly sources were
 preserved. This recheck covers canonical-file use; the mGBA revision's
 legacy import implementation has its own evidence. No filename convention
 or emulator latch observation becomes a physical hardware requirement.
+
+### Canonical-only core `a5bc7c119` recheck (2026-10-11)
+
+After removing the temporary `.sav.flash` importer, clean mGBA
+`a5bc7c1197285812ee5e19b08f84e348b9c69261` was retested with the same frozen
+B7C905B ROMs and canonical `run.flash`/`run.sav` files. Every runtime reported
+`0.11-feature/full_server-9431-a5bc7c119`, without a dirty suffix.
+The supplied Linux build library SHA-256 was
+`8b1de84531dd07c56c2a9762d2a4bbf5bcfe6a089ccfe6c1b73e8e9d44339669`.
+
+- M6FL: all 21 integrity checks passed, report
+  `/tmp/mbc6-latch-63dkeo5x/report.json`.
+- Offline: all 56 checks passed, report
+  `/tmp/mbc6-offline-wut5xd8b/report.json`.
+- Four legacy cases: all passed, report
+  `/tmp/mbc6-canonical-evidence-k24nhggt/report.json`.
+
+WP0/WP1 each remained 15/0/0/5 with raw protection status $80/$82 and
+unchanged full flash sidecars; the marked fixture remained 22/0/0/10 and
+the fixture without a TD6 marker 21/0/1/10. M6TS was valid, T30 PASS and
+T35 INFO in every legacy case. M6FL retained continuous B FF/FF, cycled and
+new-opcode B A5/C3, A A5/C3 throughout, positive INFO and no-marker SKIP.
+Offline again installed all 8192 payload bytes and reopened in a fresh core
+with zero writes; cancellation and rejection cases passed.
+
+Runners were newly compiled against matching headers/build definitions and
+loaded an isolated copy of the verified library. All cases used fresh
+canonical files without `.sav.flash`; the library and ROM hashes were
+unchanged. No Test ROM assembly or runner logic changed for this recheck.
+The preceding `5b777ac68` results remain evidence for that earlier revision.
+Canonical-only file opening is documented in the
+[storage reference](mbc6-reference.md#current-mgba-file-naming); the existing
+combined-SRAM-save compatibility path is separate. Raw emulator latch reads
+remain INFO, with hardware behavior unvalidated.
