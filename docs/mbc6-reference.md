@@ -263,7 +263,7 @@ The current project contract uses `.flash` directly, without automatic import
 from `.sav.flash` or a `.flash.mgba-import` recovery marker. The import in
 revision `5b777ac68` was withdrawn at the project operator's request.
 The canonical-only helper is implemented in
-[`a5bc7c119`, `GBMBC6OpenFlashVFile`](https://github.com/zenaror/mgba/blob/a5bc7c1197285812ee5e19b08f84e348b9c69261/src/gb/gb.c).
+[`b1df94df5`, `GBMBC6OpenFlashVFile`](https://github.com/zenaror/mgba/blob/b1df94df579d20ea97fa1e86c8eb26bd19f17e01/src/gb/gb.c).
 Existing combined `.sav` handling is a separate compatibility path.
 Earlier `.sav.flash` evidence and the results dated to `5b777ac68` retain
 their original filename and emulator version.

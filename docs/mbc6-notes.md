@@ -944,3 +944,24 @@ Canonical-only file opening is documented in the
 [storage reference](mbc6-reference.md#current-mgba-file-naming); the existing
 combined-SRAM-save compatibility path is separate. Raw emulator latch reads
 remain INFO, with hardware behavior unvalidated.
+
+### Final package-core `b1df94df5` recheck (2026-10-11)
+
+The final Linux library supplied for packaging, mGBA
+`b1df94df579d20ea97fa1e86c8eb26bd19f17e01`, passed M6FL 21/21,
+offline 56/56 and all four legacy cases on the frozen B7C905B ROMs.
+Every runtime reported clean `0.11-feature/full_server-9432-b1df94df5`.
+Library SHA-256:
+`26ba32a32e87470d4faa96c82015074987f94440d4ab45af65236e8664b250e0`.
+Reports: `/tmp/mbc6-latch-z3tiaj3o/report.json`,
+`/tmp/mbc6-offline-1zm4qpt5/report.json` and
+`/tmp/mbc6-canonical-evidence-aczgkpxj/report.json`.
+
+The four legacy counts, complete safe-flash preservation, offline full-payload
+install/zero-write reopen, negative cases and INFO latch reads matched the
+preceding canonical-only checkpoint. All cases used fresh `run.flash` and
+`run.sav`, with runners recompiled against matching final headers/definitions.
+The library hash and frozen ROMs remained unchanged. This revision also guards
+VDir access for builds without `ENABLE_DIRECTORIES`; this runtime recheck
+covers the supplied Linux Qt/SDL library. Results for `a5bc7c119` remain
+historical, and no Test ROM source or binary was changed for this recheck.
