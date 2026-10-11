@@ -27,6 +27,9 @@ python3 tools/run_mgba_offline.py \
 The Linux host runner creates a new directory under `/tmp`, compiles a small
 mCore harness against the supplied mGBA headers/library and preserves evidence
 there. Read its report for exact emulator version/commit and artifact hashes.
+It seeds and reads `run.flash` for the chip, with SRAM in `run.sav`. Use a
+library supporting standalone `.flash` naming; see the
+[file naming reference](mbc6-reference.md#current-mgba-file-naming).
 It starts the ROM normally and confirms with A+B+Start; it does not force PC
 into a test routine. A fresh harness process is used for reopening. The default
 build and the older destructive fixture build retain their previous code;

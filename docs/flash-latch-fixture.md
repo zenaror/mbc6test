@@ -46,6 +46,8 @@ this observation. The default build omits the destructive latch workflow.
 The host runner uses fresh `/tmp/mbc6-latch-*` copies, normal ROM boot, joypad
 confirmation and a bounded completion wait. It records hashes, embedded core
 version and full SRAM/flash snapshots. No PC redirection is used.
+The runner seeds and reads `run.flash`, with SRAM in `run.sav`; it requires
+the [standalone flash naming convention](mbc6-reference.md#current-mgba-file-naming).
 
 ## Procedure
 

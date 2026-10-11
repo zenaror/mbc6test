@@ -252,6 +252,25 @@ layout, busy timing, and savestate behavior—are version/build-specific. Read
 the dated evidence in [mbc6-notes.md](mbc6-notes.md) before using it to make
 claims about a release. A fixture result is not physical cartridge validation.
 
+### Current mGBA file naming
+
+In the project's mGBA fork, commit `5b777ac68` separates `game.sav` (SRAM,
+including the host catalog/save data) from `game.flash` (flash chip storage).
+Multiplayer player 2 uses `game.sa2` and `game.2.flash`. This is an emulator
+storage convention, not an MBC6 hardware rule.
+
+When the canonical flash file is absent, that revision imports the old
+`game.sav.flash` without modifying the old file. An existing `game.flash`,
+including an empty one, takes precedence. See
+[`GBMBC6OpenFlashVFile` in the mGBA revision](https://github.com/zenaror/mgba/blob/5b777ac6856bb820e7b50c6c57f8610d94e2225f/src/gb/gb.c).
+Earlier `.sav.flash` evidence above and in the dated notes retains its
+original filename and emulator version.
+
+The current Test ROM host runners seed and read `run.flash`; SRAM remains
+`run.sav`. They require a library with this naming convention and do not fall
+back to the preserved legacy file when checking new writes. Use fresh,
+disposable directories for all destructive fixtures.
+
 ## Open questions and experimental behavior
 
 - No first-party datasheet for the exact MX29F008TC-14 has been located.

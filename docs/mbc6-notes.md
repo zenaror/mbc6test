@@ -872,3 +872,41 @@ version and resolved the isolated library's SONAME. Its hash was unchanged
 before and after execution. No Test ROM source, ROM or build flags changed
 for this recheck. The results are emulator regression evidence; raw latch
 reads remain INFO and do not establish hardware behavior.
+
+### Standalone `.flash` runner update and recheck (2026-10-11)
+
+The current host runners seed and read `run.flash`; SRAM remains `run.sav`.
+Nine active Python path accesses and the current fixture instructions were
+updated. Older `.sav.flash` results retain their original emulator version
+and filename. The naming/import contract is described in the
+[file naming reference](mbc6-reference.md#current-mgba-file-naming).
+
+The same frozen B7C905B ROMs were retested on clean mGBA
+`5b777ac6856bb820e7b50c6c57f8610d94e2225f`, runtime
+`0.11-feature/full_server-9430-5b777ac68`. The supplied Linux Qt/SDL build
+library SHA-256 was
+`7237654a81967dd08314f7fd9ddf9c87757c1c1e9829027fce8701bbe89b17c8`.
+Runners were recompiled with the matching source headers and build definitions,
+then resolved the isolated library through its SONAME.
+
+| Workflow | Result | Report |
+|---|---|---|
+| M6FL | 21/21 integrity checks; positive INFO and absent-marker SKIP | `/tmp/mbc6-latch-ner9kn6v/report.json` |
+| Offline | 56/56 checks, including full installation, zero-write fresh-core reopen and rejection/cancellation cases | `/tmp/mbc6-offline-lid_8oot/report.json` |
+| Four legacy cases | WP0/WP1 each 15/0/0/5; marked fixture 22/0/0/10; no TD6 marker 21/0/1/10 | `/tmp/mbc6-canonical-evidence-ot6s57xg/report.json` |
+
+Every case used a fresh disposable directory and a canonical `run.flash`;
+no `run.sav.flash` was present. Both safe sidecars remained byte-identical.
+Legacy cases had valid M6TS, T30 PASS, T35 INFO and no FAIL. M6FL read values
+remained INFO: continuous B FF/FF, cycled/new-opcode B A5/C3, A A5/C3 throughout.
+Offline verified the complete 8192-byte payload and reopened with zero writes.
+The library hash and all four frozen ROM hashes were unchanged.
+
+The temporary legacy harness was rebuilt after the prior `/tmp` artifacts
+were removed. It uses normal core boot, joypad confirmation and the same
+40900/41030-frame budgets as the earlier four-case checks. `make` and
+`make verify` also passed in a separate static build directory after the
+host-script changes. The frozen release ROMs and assembly sources were
+preserved. This recheck covers canonical-file use; the mGBA revision's
+legacy import implementation has its own evidence. No filename convention
+or emulator latch observation becomes a physical hardware requirement.

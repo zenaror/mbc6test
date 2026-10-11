@@ -72,9 +72,9 @@ not normative PASS/FAIL expectations.
   destructive confirmation does not make arbitrary physical cartridges
   disposable; do not run these tests on original hardware or valuable flash.
 - TD6 checks the marker before issuing any hidden-map command. Seed that exact
-  16-byte token only in a fresh, disposable `.sav.flash` under `/tmp` (or an
+  16-byte token only in a fresh, disposable `.flash` under `/tmp` (or an
   equivalent scratch directory). The token is a fixture gate, not a hardware
   detector; never run any fixture build on a physical cartridge.
 - Fixture command: `make ENABLE_DESTRUCTIVE_FLASH_TESTS=1 ENABLE_MGBA_FLASH_FIXTURE_TESTS=1`
   followed by `make verify ENABLE_DESTRUCTIVE_FLASH_TESTS=1 ENABLE_MGBA_FLASH_FIXTURE_TESTS=1`.
-  Keep the ROM and `.sav.flash` in a disposable directory.
+  Keep the ROM and `.flash` in a disposable directory.

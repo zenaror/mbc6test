@@ -4,6 +4,7 @@
 Requires Linux, a C compiler, the latch Test ROM/SYM and matching mGBA
 source/library. Continuous/cycled latch reads are observations, not assertions
 about hardware. Every invocation creates new /tmp/mbc6-latch-* fixtures.
+Requires standalone .flash naming: run.sav is SRAM, run.flash is chip data.
 """
 import argparse
 import hashlib
@@ -180,7 +181,7 @@ def execute(name, directory, executable, rom, sym, library, report, artifacts):
           and latch[27:31] == bytes(4), name + ": M6FL ABI/checksum/reserved bytes")
     check(report, latch[7:9] == bytes([ERASE_BANK, OTHER_BANK]),
           name + ": target/other fixture bank identifiers")
-    flash = (directory / "run.sav.flash").read_bytes()
+    flash = (directory / "run.flash").read_bytes()
     case["flash_sha256"] = sha256(flash)
     case["flash_size"] = len(flash)
     (artifacts / (name + ".flash")).write_bytes(flash)
@@ -233,7 +234,7 @@ def run(args, root, report):
     initial = seed(True)
     report["initial_flash_sha256"] = sha256(initial)
     (root / "initial.flash").write_bytes(initial)
-    (positive / "run.sav.flash").write_bytes(initial)
+    (positive / "run.flash").write_bytes(initial)
     expected = initial[:SECTOR_START] + bytes([255]) * (ARRAY_SIZE - SECTOR_START) + initial[ARRAY_SIZE:]
     report["expected_erased_flash_sha256"] = sha256(expected)
     observed, flashed = execute("observe", positive, executable, rom, sym, library, report, root)
@@ -248,7 +249,7 @@ def run(args, root, report):
     no_marker = seed(False)
     report["no_marker_initial_flash_sha256"] = sha256(no_marker)
     (root / "no-marker-initial.flash").write_bytes(no_marker)
-    (negative / "run.sav.flash").write_bytes(no_marker)
+    (negative / "run.flash").write_bytes(no_marker)
     skipped_record, skipped = execute("no-marker", negative, executable, rom, sym, library, report, root)
     check(report, skipped_record[5:7] == bytes([2, 1]) and skipped_record[25:27] == bytes([1, 0]),
           "no-marker: SKIP at marker gate before erase, cleanup performed")

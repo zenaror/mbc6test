@@ -3,6 +3,7 @@
 
 Uses only the homebrew Test ROM; no server, download or network adapter is
 configured. Requires Linux, a C compiler and matching mGBA source/library.
+Requires standalone .flash naming: run.sav is SRAM, run.flash is chip data.
 """
 import argparse
 import hashlib
@@ -175,7 +176,7 @@ def execute(name, directory, executable, rom, sym, library, report, artifacts, c
           name + ": safe M6TS format2 suite3 counts 15/0/0/5 and checksum")
     check(report, offline[:5] == b"M6OF\x01" and (sum(offline[:31]) & 255) == offline[31]
           and offline[23:31] == bytes(8), name + ": M6OF ABI/checksum/reserved bytes")
-    flash = (directory / "run.sav.flash").read_bytes()
+    flash = (directory / "run.flash").read_bytes()
     case["flash_sha256"] = sha256(flash)
     case["flash_size"] = len(flash)
     (artifacts / (name + ".flash")).write_bytes(flash)
@@ -218,7 +219,7 @@ def run(args, root, report):
         "protection_metadata_offset": 0x100100,
     }
     (root / "initial.flash").write_bytes(initial)
-    (positive / "run.sav.flash").write_bytes(initial)
+    (positive / "run.flash").write_bytes(initial)
     expected_flash = (initial[:SECTOR_START] + expected +
                       bytes([255]) * (ARRAY_SIZE - SECTOR_START - PAYLOAD_SIZE) + initial[ARRAY_SIZE:])
     report["expected_installed_flash_sha256"] = sha256(expected_flash)
@@ -240,7 +241,7 @@ def run(args, root, report):
     cancelled = root / "cancel"
     cancelled.mkdir(mode=0o700)
     (cancelled / "run.sav").write_bytes((root / "reopen.sav").read_bytes())
-    (cancelled / "run.sav.flash").write_bytes(installed)
+    (cancelled / "run.flash").write_bytes(installed)
     cancelled_summary, cancelled_flash = execute("cancel", cancelled, executable, rom,
                                                  sym, library, report, root, confirmed=False)
     check(report, cancelled_summary == reopened_summary,
@@ -254,7 +255,7 @@ def run(args, root, report):
     invalid_sram[0x7F20 + 6] = 6  # phase EXEC, not successful completion.
     invalid_sram[0x7F20 + 31] = sum(invalid_sram[0x7F20:0x7F20 + 31]) & 255
     (invalid_record / "run.sav").write_bytes(invalid_sram)
-    (invalid_record / "run.sav.flash").write_bytes(installed)
+    (invalid_record / "run.flash").write_bytes(installed)
     (root / "invalid-prior-record-initial.sav").write_bytes(invalid_sram)
     report["invalid_prior_record_initial_sram_sha256"] = sha256(invalid_sram)
     invalid_summary, invalid_flash = execute("invalid-prior-record", invalid_record,
@@ -268,7 +269,7 @@ def run(args, root, report):
     negative.mkdir(mode=0o700)
     no_marker = seed(False)
     report["no_marker_initial_flash_sha256"] = sha256(no_marker)
-    (negative / "run.sav.flash").write_bytes(no_marker)
+    (negative / "run.flash").write_bytes(no_marker)
     skipped_summary, skipped = execute("no-marker", negative, executable, rom, sym, library, report, root)
     check(report, skipped_summary[5:9] == bytes([3, 1, 0, 0]) and skipped_summary[11:13] == bytes(2)
           and skipped_summary[21:23] == bytes(2), "no-marker: SKIP before erase/program/execute")
@@ -276,7 +277,7 @@ def run(args, root, report):
     corrupt = bytearray(installed)
     corrupt[SECTOR_START + 0x100] ^= 1
     report["corrupt_initial_flash_sha256"] = sha256(corrupt)
-    (positive / "run.sav.flash").write_bytes(corrupt)
+    (positive / "run.flash").write_bytes(corrupt)
     (root / "corrupt-initial.flash").write_bytes(corrupt)
     corrupt_summary, corrupted = execute("corrupt", positive, executable, rom, sym, library, report, root)
     check(report, corrupt_summary[5:9] == bytes([2, 5, 2, 0]) and corrupt_summary[11:13] == bytes(2),
