@@ -40,6 +40,8 @@ fontes originais, seguindo a hierarquia de fontes de
 
 - Fale com o Operador em português do Brasil.
 - Só faça commit ou push quando ele pedir.
+- Não acrescente automaticamente trailers `Co-authored-by` atribuídos ao
+  Claude/Anthropic. Preserve autores e créditos de contribuições humanas.
 - Leia a implementação e as fontes antes de mudar algo. Preserve as
   restrições de arquitetura (por exemplo, código que troca bancos fica na
   ROM fixa) salvo motivo documentado, e prefira mudanças pequenas e

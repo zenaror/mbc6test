@@ -3,6 +3,14 @@
 An open-source Game Boy Color test ROM for validating MBC6 mapper
 implementations in emulators and compatible cartridge hardware.
 
+## AI assistance
+
+Parts of this project were developed with assistance from AI tools,
+including code generation.
+
+See [commit attribution maintenance](docs/history-attribution.md) for the
+historical commit map and guidance for existing clones.
+
 ## Purpose
 
 MBC6 is a rare, historically under-documented Game Boy mapper used by
