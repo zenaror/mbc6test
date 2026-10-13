@@ -4,7 +4,8 @@ This file holds the project's full technical rules. Until 2026-10-04 they
 lived in `CLAUDE.md`, which was removed at the project operator's request.
 The text below is unchanged except for this note, the spelled-out name of the iceboy
 reference, the repository-structure listing, and the shared-memory section
-at the end. `AGENTS.md` is the short working guide for
+at the end, plus the cleanup and retention policy added on 2026-10-13.
+`AGENTS.md` is the short working guide for
 agents and points here.
 
 ## Project mission
@@ -479,6 +480,55 @@ fixture flags, excludes the offline workflow, and uses its own M6FL annex.
 It requires the hidden marker `M6LATCHFIXTUREON` before sector7 erase. Use only
 disposable `/tmp` mGBA copies. Raw post-erase/enable-cycle reads are INFO;
 do not invent a hardware expectation. See [flash-latch-fixture.md](flash-latch-fixture.md).
+
+## Cleanup and artifact retention
+
+At task completion, checkpoints and pauses, classify the artifacts owned by
+that task before removing anything. Ignored or untracked files are not
+automatically disposable. Do not resume development or run new tests merely
+to apply this policy.
+
+| Category and creator | Reproduction or value | Retention and removal condition |
+|---|---|---|
+| `build/` objects and flag stamps, created by Make/RGBDS | Rebuild from the identified source, toolchain and flags | Remove only confirmed task-owned cache after the build is idle; inspect all contents first |
+| `build/*.gbc`, `*.map`, `*.sym`, created by the linker | Exact tested ROM and address metadata | Preserve accepted or failure-relevant artifacts with hashes in durable storage before deleting working copies |
+| `src/bank_data.asm`, `bank_data_fixed.asm`, `font_data.asm`, `build_info.asm`, created by `tools/gen_*.py` | Generated patterns/font and Git build identity | Regenerate only from the recorded revision and configuration; retain the original tested ROM because current HEAD can produce a different build identifier |
+| Task-owned Python bytecode caches | Recreated by Python | Remove only explicitly identified caches after their consumers stop |
+| Runner directories `/tmp/mbc6-latch-*` and `/tmp/mbc6-offline-*`, created by the host runners | Reports, disposable ROM/save/flash fixtures and reproduction context | Retain while execution, analysis or a failure is pending; remove only the exact owned directory after preserving the required evidence |
+| Original ROMs, SRAM/flash sidecars, fixtures and console/hardware captures | Unique inputs or observations; cannot assume regeneration | Preserve originals and evidence durably; never include them in routine cleanup, including legacy save formats |
+| Accepted releases, validation packages and Git recovery bundles/maps | Published identity, reproducibility and recovery | Keep independently of working copies; Git attribution recovery remains retained while old clones, evidence references or rollback may require it |
+| Unknown-origin files, emulator directories and agent/session data | Ownership and reproducibility not established | Preserve and record the question until the owner and removal condition are known |
+
+Before clearing a temporary result, preserve the minimum sufficient evidence
+in the established durable validation/release location: relevant report and
+failure cases, exact ROM/input hashes, source/core/library identity, runner
+and ABI configuration, flags, commands and environment. Retain required input
+fixtures and outputs, not just paths or hashes of missing files. `/tmp` and an
+OMM summary do not preserve artifacts. Hardware evidence and unexplained
+failures require retention until their disposition is explicitly resolved.
+There is no universal expiry period.
+
+The existing `make clean` removes the entire configured `BUILD_DIR` (normally
+`build/`) and the four generated assembly files listed above. It does not
+classify evidence or check active consumers. Use it only after inspecting those
+exact paths, variable overrides, ownership, symlinks and destinations, and
+preserving every required artifact. In a shared checkout, use explicit removal
+of known task-owned disposable files instead if the whole directory cannot be
+cleared safely. Do not use `git clean -xfd`, wildcard cleanup of `/tmp`, deletion
+by age, or removal of another session's outputs.
+
+**Inspection caveat:** the Makefile runs generators at parse time, including
+unconditional generation of `src/build_info.asm`. Consequently `make -n clean`
+is not a read-only preview. Inspect the Makefile's variables and `clean` recipe
+directly without invoking Make when a non-mutating scope check is required.
+No unattended cleanup is authorized by this policy.
+
+At closure, check for active jobs using the intended paths, preserve necessary
+artifacts, and remove only the explicit classified set belonging to the task.
+Record what was removed, what remains and where, and unresolved ownership or
+retention questions in the handoff. Report counts/sizes when readily available;
+do not conduct a broad retrospective purge to obtain them. Keep Git recovery
+bundles, stashes and internal session data outside published refs.
 
 ## Memória compartilhada OMM
 
