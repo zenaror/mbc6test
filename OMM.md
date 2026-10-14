@@ -19,9 +19,18 @@ Não recrie dados da OMM neste repositório, nem rodando a CLI `omm` nesta pasta
 Pelo MCP da OMM, no escopo `mbc6test`:
 
 - `context` ou `search` para encontrar registros e `get_memory` para abrir um;
+- na retomada, `get_role` para ler `project-base` uma vez e reutilizá-lo na sessão;
 - `search_sources` e `read_source` para conferir a origem;
 - `remember` (ou `propose_memory`, quando a pessoa for revisar) para registrar conhecimento novo, com origem e evidência; marque o registro antigo como `superseded` com `set_memory_status`;
-- `handoff` para deixar o estado real, os bloqueios e a próxima ação.
+- `get_handoff` para ler o estado e seu SHA; mescle os itens vigentes e use
+  `handoff` com `expected_sha256` para gravar estado, bloqueios e próxima ação.
+
+O planejamento técnico público fica nas questões em aberto de
+[`docs/mbc6-reference.md`](docs/mbc6-reference.md), na cobertura de
+[`docs/test-matrix.md`](docs/test-matrix.md) e nas descobertas datadas de
+[`docs/mbc6-notes.md`](docs/mbc6-notes.md). O handoff registra a posição atual
+sem duplicar esse acompanhamento. Skills e regras comuns permanecem na OMM;
+adaptações de cliente são opcionais e não substituem os documentos do Git.
 
 Se usar a CLI `omm`, aponte-a para os dados da OMM, nunca para esta pasta. O backup é sincronizado pelo mecanismo normal da OMM (painel "Sincronizar backup" ou `omm sync`), e não por commits neste repositório.
 

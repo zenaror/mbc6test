@@ -24,8 +24,9 @@ resultados de emulador e questões em aberto.
 2. Depois consulte a OMM pelo MCP: `context` e `search` no escopo
    `mbc6test` (inclua `global` quando ajudar — por exemplo, a referência
    `net-de-get-maker`). Abra registros completos com `get_memory` e
-   confira fontes com `search_sources`/`read_source`. Para orientação de
-   domínio existe a skill OMM `mbc6test-expert`.
+   confira fontes com `search_sources`/`read_source`. Na retomada, leia uma
+   vez o papel `project-base` com `get_role` e reutilize-o na sessão. Para
+   orientação de domínio existe a skill OMM `mbc6test-expert`.
 3. Não grave dados da OMM neste repositório. Os dados da OMM ficam só no
    backup `ai-omm-backup`, acessado pelo MCP (veja `OMM.md`). A antiga
    pasta `memory/` era uma cópia legada e foi removida em 2026-10-04; o

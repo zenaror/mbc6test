@@ -56,6 +56,17 @@ For the separate, opt-in install/execute/reopen fixture, see
 The separate [flash latch investigation](docs/flash-latch-fixture.md) records
 erase/remap/enable-cycle observations without defining hardware expectations.
 
+## Status and continuity
+
+Implemented coverage and expected results are maintained in the
+[test matrix](docs/test-matrix.md); version-specific validation is recorded in
+[dated findings](docs/mbc6-notes.md). Emulator results do not establish
+real-cartridge conformance. The research backlog is the reference's
+[open questions](docs/mbc6-reference.md#open-questions-and-experimental-behavior),
+together with coverage gaps in the matrix. Keep those documents current rather
+than maintaining a second roadmap. Session state and handoffs use the external
+OMM as explained in [OMM.md](OMM.md); public technical findings stay in `docs/`.
+
 ## Target platform
 
 CGB-only (`$0143 = $C0`). This ROM does not support DMG, MGB, or SGB,
@@ -250,15 +261,29 @@ detail — [FlashGBX](https://github.com/lesserkuma/FlashGBX) and
 │   ├── project-rules.md   — full project rules (formerly CLAUDE.md)
 │   ├── mbc6-reference.md  — reusable mapper/flash technical reference
 │   ├── net-de-get-offline.md — disposable install/execute/reopen fixture
+│   ├── flash-latch-fixture.md — exploratory erase/remap observations
+│   ├── history-attribution.md — old/new Git hashes and clone guidance
 │   ├── mbc6-notes.md      — implementation notes / findings
 │   ├── screen-guide.md    — legend for what the ROM shows on screen
 │   ├── test-matrix.md     — per-test authoritative reference
 │   └── result-format.md   — machine-readable result block (optional)
 ├── include/               — hardware.inc, mbc6.inc, tests.inc
 ├── src/                   — mapper, flash, test, and UI source
+├── .github/workflows/release.yml — release build and static verification
 └── tools/
     ├── mbc6_layout.py     — shared bank-signature layout constants
     ├── gen_bank_data.py   — generates src/bank_data*.asm
     ├── gen_font.py        — generates src/font_data.asm (original font)
+    ├── gen_build_info.py  — generates src/build_info.asm
+    ├── run_mgba_latch.py  — opt-in fixture orchestration (C runner alongside)
+    ├── run_mgba_offline.py — opt-in fixture orchestration (C runner alongside)
     └── verify_rom.py      — static ROM verifier used by `make verify`
 ```
+
+Tests are assembly routines in `src/tests_*.asm`, not a separate `tests/`
+directory. `Makefile` drives RGBDS and the host-side static verifier; the
+fixture guides document the optional C/Python runners, dependencies and limits.
+Contributor rules are in [AGENTS.md](AGENTS.md), with technical constraints and
+[cleanup/retention](docs/project-rules.md#cleanup-and-artifact-retention) in
+`docs/project-rules.md`. This project maintains this Test ROM repository;
+coordinated mGBA changes belong to the separate emulator repository.
